@@ -950,7 +950,11 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .sub-nav {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
   margin-bottom: 0.5rem;
 }
 
