@@ -101,6 +101,25 @@ body.modal-open {
   z-index: 1;
 }
 
+.header-credit {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.8;
+}
+
+.header-credit a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.header-credit a:hover {
+  text-decoration: underline;
+}
+
 .logo {
   display: flex;
   align-items: center;
@@ -911,6 +930,11 @@ input[type="number"]::-webkit-outer-spin-button {
 @media (max-width: 600px) {
   .header {
     padding: 1.25rem 1rem;
+  }
+  .header-credit {
+    position: static;
+    text-align: right;
+    margin-bottom: 0.35rem;
   }
   .logo h1 {
     font-size: 1.4rem;
