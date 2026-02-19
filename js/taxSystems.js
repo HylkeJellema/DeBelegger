@@ -1,13 +1,31 @@
 /**
  * Box 3 Tax Calculation Systems
  *
- * Each function takes:
- *  - portfolioValue: current portfolio value in EUR
- *  - actualReturn: actual return amount in EUR for this year
- *  - config: system-specific configuration object
- *
- * Returns: tax amount in EUR (>= 0)
+ * Each calculation returns tax in EUR (>= 0).
+ * The simulation supplies portfolioValue as the peildatum/base for that year.
  */
+
+function getPartnerMultiplier(config = {}) {
+  const raw = Number(config.partnerMultiplier);
+  return Number.isFinite(raw) && raw > 1 ? 2 : 1;
+}
+
+function normalizeAllocations(allocSavings, allocInvest, allocDebt) {
+  const savings = Math.max(0, Number(allocSavings) || 0);
+  const invest = Math.max(0, Number(allocInvest) || 0);
+  const debt = Math.max(0, Number(allocDebt) || 0);
+  const total = savings + invest + debt;
+
+  if (total <= 0) {
+    return { savingsShare: 0, investShare: 0, debtShare: 0 };
+  }
+
+  return {
+    savingsShare: savings / total,
+    investShare: invest / total,
+    debtShare: debt / total
+  };
+}
 
 /**
  * No Tax — always returns 0
@@ -18,19 +36,21 @@ export function calcNoTax() {
 
 /**
  * Old System (pre-2017)
- * - Fixed 4% deemed return on taxable wealth
+ * - Fixed 4% deemed return
  * - Tax rate: 30%
- * - Exemption: ~€21,139 (heffingsvrij vermogen)
- * - Effective rate: 1.2% on wealth above exemption
+ * - Single heffingsvrij vermogen setting
  */
 export function calcOldSystem(portfolioValue, actualReturn, config) {
   const {
-    deemedReturn = 4,       // %
-    taxRate = 30,            // %
-    exemption = 21139        // €
+    deemedReturn = 4,  // %
+    taxRate = 30,      // %
+    exemption = 21139 // € per person
   } = config;
 
-  const taxableWealth = Math.max(0, portfolioValue - exemption);
+  const partnerMultiplier = getPartnerMultiplier(config);
+  const effectiveExemption = exemption * partnerMultiplier;
+
+  const taxableWealth = Math.max(0, portfolioValue - effectiveExemption);
   const deemedIncome = taxableWealth * (deemedReturn / 100);
   const tax = deemedIncome * (taxRate / 100);
 
@@ -38,66 +58,89 @@ export function calcOldSystem(portfolioValue, actualReturn, config) {
 }
 
 /**
- * Current System (2024-2027)
- * - Three categories with different fictitious return rates
- * - Tax rate: 36%
- * - Exemption: €57,684
- * - Categories: savings (1.44%), investments (5.88%), debts (deducted at 2.62%)
- * - Default: 100% in investments
+ * Current System (overbruggingswet, illustrative)
+ * - Fictitious return by category (savings, investments, debts)
+ * - Debt threshold and heffingsvrij vermogen included
+ * - Fiscal partner doubles relevant thresholds
  */
 export function calcCurrentSystem(portfolioValue, actualReturn, config) {
   const {
     taxRate = 36,            // %
-    exemption = 57684,       // €
-    savingsRate = 1.44,      // % fictitious return on savings
-    investRate = 5.88,       // % fictitious return on investments
-    debtRate = 2.62,         // % fictitious deduction for debts
-    allocSavings = 0,        // % of wealth in savings
-    allocInvest = 100,       // % of wealth in investments
-    allocDebt = 0            // % of wealth in debts
+    exemption = 59357,       // € per person
+    debtThreshold = 3800,    // € per person
+    savingsRate = 1.28,      // %
+    investRate = 6.00,       // %
+    debtRate = 2.70,         // %
+    allocSavings = 0,        // %
+    allocInvest = 100,       // %
+    allocDebt = 0            // %
   } = config;
 
-  const taxableWealth = Math.max(0, portfolioValue - exemption);
-  if (taxableWealth <= 0) return 0;
+  const totalWealth = Math.max(0, portfolioValue);
+  if (totalWealth <= 0) return 0;
 
-  // Calculate weighted fictitious return
-  const savingsPortion = taxableWealth * (allocSavings / 100);
-  const investPortion = taxableWealth * (allocInvest / 100);
-  const debtPortion = taxableWealth * (allocDebt / 100);
+  const partnerMultiplier = getPartnerMultiplier(config);
+  const effectiveExemption = exemption * partnerMultiplier;
+  const effectiveDebtThreshold = debtThreshold * partnerMultiplier;
 
-  const fictIncome =
+  const { savingsShare, investShare, debtShare } = normalizeAllocations(
+    allocSavings,
+    allocInvest,
+    allocDebt
+  );
+
+  if (savingsShare === 0 && investShare === 0 && debtShare === 0) return 0;
+
+  const savingsPortion = totalWealth * savingsShare;
+  const investPortion = totalWealth * investShare;
+  const debtPortion = totalWealth * debtShare;
+  const deductibleDebt = Math.max(0, debtPortion - effectiveDebtThreshold);
+
+  const belastbaarRendement =
     savingsPortion * (savingsRate / 100) +
     investPortion * (investRate / 100) -
-    debtPortion * (debtRate / 100);
+    deductibleDebt * (debtRate / 100);
+  if (belastbaarRendement <= 0) return 0;
 
-  const tax = Math.max(0, fictIncome) * (taxRate / 100);
+  const rendementsgrondslag = savingsPortion + investPortion - deductibleDebt;
+  if (rendementsgrondslag <= 0) return 0;
+
+  const grondslagSparenBeleggen = Math.max(0, rendementsgrondslag - effectiveExemption);
+  if (grondslagSparenBeleggen <= 0) return 0;
+
+  const aandeelInRendementsgrondslag = Math.min(1, grondslagSparenBeleggen / rendementsgrondslag);
+  const voordeelUitSparenBeleggen = belastbaarRendement * aandeelInRendementsgrondslag;
+  const tax = voordeelUitSparenBeleggen * (taxRate / 100);
+
   return Math.max(0, tax);
 }
 
 /**
- * Future System (2028+)
- * - Tax on actual returns
- * - Tax rate: 36%
- * - Heffingsvrij resultaat: €1,800
- *   • result ≤ 0        → taxable = 0 (don't create extra negative)
- *   • 0 < result < 1800 → taxable = 0
- *   • result ≥ 1800     → taxable = result − 1800
- * - Loss carry forward is handled in the simulation loop (simulation.js)
+ * Future System (2028+ proposal)
+ * - Step 1: determine income after heffingsvrij resultaat
+ * - Step 2: simulation handles carry-forward loss set-off
+ * - Step 3: this function applies the tax rate to taxable income
  */
-export function calcFutureSystem(portfolioValue, actualReturn, config) {
+export function calcFutureIncome(actualReturn, config) {
   const {
-    taxRate = 36,            // %
-    freeReturn = 1800        // € heffingsvrij resultaat
+    freeReturn = 1800 // € per person
   } = config;
 
-  // Only apply heffingsvrij when actual return is positive;
-  // never let the deduction create a negative taxable amount.
-  if (actualReturn <= 0) return 0;
+  // Heffingsvrij resultaat only reduces positive outcomes.
+  if (actualReturn <= 0) return actualReturn;
 
-  const taxableReturn = Math.max(0, actualReturn - freeReturn);
-  const tax = taxableReturn * (taxRate / 100);
+  const partnerMultiplier = getPartnerMultiplier(config);
+  const effectiveFreeReturn = freeReturn * partnerMultiplier;
+  return Math.max(0, actualReturn - effectiveFreeReturn);
+}
 
-  return tax;
+export function calcFutureSystem(portfolioValue, taxableIncome, config) {
+  const {
+    taxRate = 36 // %
+  } = config;
+
+  const tax = Math.max(0, taxableIncome) * (taxRate / 100);
+  return Math.max(0, tax);
 }
 
 /**
@@ -109,21 +152,26 @@ export function getDefaultConfigs() {
     old: {
       deemedReturn: 4,
       taxRate: 30,
-      exemption: 21139
+      exemption: 21139,
+      partnerMultiplier: 1
     },
     current: {
       taxRate: 36,
-      exemption: 57684,
-      savingsRate: 1.44,
-      investRate: 5.88,
-      debtRate: 2.62,
+      exemption: 59357,
+      debtThreshold: 3800,
+      savingsRate: 1.28,
+      investRate: 6.00,
+      debtRate: 2.70,
       allocSavings: 0,
       allocInvest: 100,
-      allocDebt: 0
+      allocDebt: 0,
+      partnerMultiplier: 1
     },
     future: {
       taxRate: 36,
-      freeReturn: 1800
+      freeReturn: 1800,
+      lossThreshold: 500,
+      partnerMultiplier: 1
     }
   };
 }

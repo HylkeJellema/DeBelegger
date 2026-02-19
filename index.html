@@ -61,6 +61,18 @@
               <select id="yearEnd"></select>
             </div>
           </div>
+
+          <div class="control-group">
+            <label for="fiscalPartner">Huishouden</label>
+            <div class="partner-toggle-row">
+              <span>Fiscale partner</span>
+              <label class="toggle">
+                <input type="checkbox" id="fiscalPartner" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="control-help">Verdubbelt vrijstellingen en drempels.</p>
+          </div>
         </div>
       </section>
 
@@ -125,7 +137,7 @@
               <span class="toggle-slider"></span>
             </label>
             <span class="config-dot" style="background: var(--clr-current)"></span>
-            Huidig systeem (2024-2027)
+            Huidig systeem (overbruggingswet)
             <span class="config-hint">instellingen</span>
           </summary>
           <div class="config-body">
@@ -136,19 +148,23 @@
               </div>
               <div class="config-field">
                 <label for="curExemption">Heffingsvrij vermogen</label>
-                <div class="input-with-prefix"><span>€</span><input type="number" id="curExemption" value="57684" step="100" min="0" /></div>
+                <div class="input-with-prefix"><span>€</span><input type="number" id="curExemption" value="59357" step="100" min="0" /></div>
               </div>
               <div class="config-field">
                 <label for="curSavingsRate">Forfait spaargeld</label>
-                <div class="input-with-suffix"><input type="number" id="curSavingsRate" value="1.44" step="0.01" min="0" /><span>%</span></div>
+                <div class="input-with-suffix"><input type="number" id="curSavingsRate" value="1.28" step="0.01" min="0" /><span>%</span></div>
               </div>
               <div class="config-field">
                 <label for="curInvestRate">Forfait beleggingen</label>
-                <div class="input-with-suffix"><input type="number" id="curInvestRate" value="5.88" step="0.01" min="0" /><span>%</span></div>
+                <div class="input-with-suffix"><input type="number" id="curInvestRate" value="6.00" step="0.01" min="0" /><span>%</span></div>
               </div>
               <div class="config-field">
                 <label for="curDebtRate">Forfait schulden</label>
-                <div class="input-with-suffix"><input type="number" id="curDebtRate" value="2.62" step="0.01" min="0" /><span>%</span></div>
+                <div class="input-with-suffix"><input type="number" id="curDebtRate" value="2.70" step="0.01" min="0" /><span>%</span></div>
+              </div>
+              <div class="config-field">
+                <label for="curDebtThreshold">Drempel schulden</label>
+                <div class="input-with-prefix"><span>€</span><input type="number" id="curDebtThreshold" value="3800" step="100" min="0" /></div>
               </div>
               <div class="config-field full-width">
                 <label>Verdeling vermogen</label>
@@ -192,7 +208,12 @@
                 <label for="futFreeReturn">Vrijgesteld rendement</label>
                 <div class="input-with-prefix"><span>€</span><input type="number" id="futFreeReturn" value="1800" step="100" min="0" /></div>
               </div>
+              <div class="config-field">
+                <label for="futLossThreshold">Verliesdrempel</label>
+                <div class="input-with-prefix"><span>€</span><input type="number" id="futLossThreshold" value="500" step="100" min="0" /></div>
+              </div>
             </div>
+            <button type="button" class="info-link" id="futInfoBtn">Hoe wordt dit berekend?</button>
           </div>
         </details>
       </section>
@@ -250,6 +271,27 @@
         voor DeBelegger
       </p>
     </footer>
+
+    <!-- Info modal: Future box 3 calculations -->
+    <div class="modal-overlay" id="futureInfoModal" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="futureInfoTitle">
+        <div class="modal-header">
+          <h3 id="futureInfoTitle">Toekomstig Box 3 (2028+) rekenmethode</h3>
+          <button type="button" class="modal-close" id="futureInfoClose" aria-label="Sluiten">x</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-lead">Deze simulator rekent dit scenario als een eenvoudige belasting op werkelijk rendement (illustratief).</p>
+          <ol class="modal-list">
+            <li><strong>Jaarresultaat:</strong> startvermogen × jaarreturn.</li>
+            <li><strong>Heffingsvrij resultaat:</strong> alleen bij positief resultaat: max(0, resultaat − vrijstelling).</li>
+            <li><strong>Verlies (carry-forward):</strong> bij negatief resultaat wordt het verlies toegevoegd aan een verliespot, maar alleen als het verlies groter is dan de verliesdrempel.</li>
+            <li><strong>Verrekening:</strong> in een positief jaar wordt de verliespot eerst verrekend met het positieve inkomen (na vrijstelling).</li>
+            <li><strong>Belasting:</strong> belastbaar inkomen × tarief.</li>
+          </ol>
+          <p class="modal-note">Als je “Fiscale partner” aanzet, worden de vrijstelling en verliesdrempel verdubbeld.</p>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="/js/app.js"></script>
   </body>

@@ -5,7 +5,13 @@
  * using historical market return data.
  */
 
-import { calcNoTax, calcOldSystem, calcCurrentSystem, calcFutureSystem } from './taxSystems.js';
+import {
+  calcNoTax,
+  calcOldSystem,
+  calcCurrentSystem,
+  calcFutureIncome,
+  calcFutureSystem
+} from './taxSystems.js';
 
 /**
  * Run the full simulation
@@ -60,26 +66,28 @@ export function runSimulation(startCapital, returns, configs) {
           tax = calcCurrentSystem(prevValue, returnAmount, configs.current);
           break;
         case 'future': {
-          // Future system: tax on actual return with loss carry-forward.
-          // futureCarryForwardLoss is >= 0 and represents accumulated
-          // losses from prior years that may offset future gains.
+          // Proposal order:
+          // 1) apply heffingsvrij resultaat to positive annual return
+          // 2) offset positive income with carry-forward losses
+          // 3) register a new loss only if annual loss exceeds threshold
+          const incomeBeforeLossSetoff = calcFutureIncome(returnAmount, configs.future);
+          const partnerMultiplier = Number(configs.future.partnerMultiplier) > 1 ? 2 : 1;
+          const lossThreshold = (Number(configs.future.lossThreshold) || 500) * partnerMultiplier;
 
-          if (returnAmount <= 0) {
-            // Loss year — accumulate loss for carry-forward, no tax due.
-            futureCarryForwardLoss += Math.abs(returnAmount);
+          if (incomeBeforeLossSetoff < 0) {
+            const recognisedLoss = Math.abs(incomeBeforeLossSetoff);
+            if (recognisedLoss > lossThreshold) {
+              futureCarryForwardLoss += recognisedLoss;
+            }
+            tax = 0;
+          } else if (incomeBeforeLossSetoff === 0) {
             tax = 0;
           } else {
-            // Gain year — offset against any carried-forward losses first.
-            const netReturn = returnAmount - futureCarryForwardLoss;
-            if (netReturn <= 0) {
-              // Gain not enough to cover prior losses; keep the remainder.
-              futureCarryForwardLoss = Math.abs(netReturn);
-              tax = 0;
-            } else {
-              // Losses fully absorbed; tax the remaining gain.
-              futureCarryForwardLoss = 0;
-              tax = calcFutureSystem(valueAfterReturn, netReturn, configs.future);
-            }
+            const lossUsed = Math.min(futureCarryForwardLoss, incomeBeforeLossSetoff);
+            futureCarryForwardLoss -= lossUsed;
+
+            const taxableIncome = incomeBeforeLossSetoff - lossUsed;
+            tax = calcFutureSystem(valueAfterReturn, taxableIncome, configs.future);
           }
           break;
         }

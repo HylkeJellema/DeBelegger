@@ -40,7 +40,7 @@ let configs = getDefaultConfigs();
 const systemMeta = {
   noTax: { label: 'Geen belasting', color: '#00d68f', bg: 'rgba(0, 214, 143, 0.08)' },
   old:   { label: 'Oud systeem (vóór 2017)', color: '#4a90d9', bg: 'rgba(74, 144, 217, 0.08)' },
-  current: { label: 'Huidig systeem (2024-2027)', color: '#f5a623', bg: 'rgba(245, 166, 35, 0.08)' },
+  current: { label: 'Huidig systeem (overbruggingswet)', color: '#f5a623', bg: 'rgba(245, 166, 35, 0.08)' },
   future: { label: 'Toekomstig (2028+)', color: '#ff4466', bg: 'rgba(255, 68, 102, 0.08)' }
 };
 
@@ -52,6 +52,7 @@ function cacheDom() {
   dom.indexSelect = document.getElementById('indexSelect');
   dom.yearStart = document.getElementById('yearStart');
   dom.yearEnd = document.getElementById('yearEnd');
+  dom.fiscalPartner = document.getElementById('fiscalPartner');
   dom.summaryGrid = document.getElementById('summaryGrid');
 
   // Old system config
@@ -65,6 +66,7 @@ function cacheDom() {
   dom.curSavingsRate = document.getElementById('curSavingsRate');
   dom.curInvestRate = document.getElementById('curInvestRate');
   dom.curDebtRate = document.getElementById('curDebtRate');
+  dom.curDebtThreshold = document.getElementById('curDebtThreshold');
   dom.curAllocSavings = document.getElementById('curAllocSavings');
   dom.curAllocInvest = document.getElementById('curAllocInvest');
   dom.curAllocDebt = document.getElementById('curAllocDebt');
@@ -72,6 +74,28 @@ function cacheDom() {
   // Future system config
   dom.futTaxRate = document.getElementById('futTaxRate');
   dom.futFreeReturn = document.getElementById('futFreeReturn');
+  dom.futLossThreshold = document.getElementById('futLossThreshold');
+
+  // Future info modal
+  dom.futInfoBtn = document.getElementById('futInfoBtn');
+  dom.futureInfoModal = document.getElementById('futureInfoModal');
+  dom.futureInfoClose = document.getElementById('futureInfoClose');
+}
+
+function openFutureInfoModal() {
+  if (!dom.futureInfoModal) return;
+  document.body.classList.add('modal-open');
+  dom.futureInfoModal.classList.add('is-open');
+  dom.futureInfoModal.setAttribute('aria-hidden', 'false');
+  if (dom.futureInfoClose) dom.futureInfoClose.focus();
+}
+
+function closeFutureInfoModal() {
+  if (!dom.futureInfoModal) return;
+  document.body.classList.remove('modal-open');
+  dom.futureInfoModal.classList.remove('is-open');
+  dom.futureInfoModal.setAttribute('aria-hidden', 'true');
+  if (dom.futInfoBtn) dom.futInfoBtn.focus();
 }
 
 // ── Get active (toggled-on) systems ──
@@ -142,26 +166,33 @@ function populateYearSelectors(indexKey, preserveSelection) {
 
 // ── Read configs from DOM ──
 function readConfigs() {
+  const partnerMultiplier = dom.fiscalPartner.checked ? 2 : 1;
+
   configs.old = {
     deemedReturn: parseFloat(dom.oldDeemedReturn.value) || 4,
     taxRate: parseFloat(dom.oldTaxRate.value) || 30,
-    exemption: parseFloat(dom.oldExemption.value) || 21139
+    exemption: parseFloat(dom.oldExemption.value) || 21139,
+    partnerMultiplier
   };
 
   configs.current = {
     taxRate: parseFloat(dom.curTaxRate.value) || 36,
-    exemption: parseFloat(dom.curExemption.value) || 57684,
-    savingsRate: parseFloat(dom.curSavingsRate.value) || 1.44,
-    investRate: parseFloat(dom.curInvestRate.value) || 5.88,
-    debtRate: parseFloat(dom.curDebtRate.value) || 2.62,
+    exemption: parseFloat(dom.curExemption.value) || 59357,
+    debtThreshold: parseFloat(dom.curDebtThreshold.value) || 3800,
+    savingsRate: parseFloat(dom.curSavingsRate.value) || 1.28,
+    investRate: parseFloat(dom.curInvestRate.value) || 6.00,
+    debtRate: parseFloat(dom.curDebtRate.value) || 2.70,
     allocSavings: parseFloat(dom.curAllocSavings.value) || 0,
     allocInvest: parseFloat(dom.curAllocInvest.value) || 100,
-    allocDebt: parseFloat(dom.curAllocDebt.value) || 0
+    allocDebt: parseFloat(dom.curAllocDebt.value) || 0,
+    partnerMultiplier
   };
 
   configs.future = {
     taxRate: parseFloat(dom.futTaxRate.value) || 36,
-    freeReturn: parseFloat(dom.futFreeReturn.value) || 1800
+    freeReturn: parseFloat(dom.futFreeReturn.value) || 1800,
+    lossThreshold: parseFloat(dom.futLossThreshold.value) || 500,
+    partnerMultiplier
   };
 }
 
@@ -415,6 +446,7 @@ function setupEventListeners() {
   dom.startCapital.addEventListener('input', debouncedUpdate);
   dom.yearStart.addEventListener('change', update);
   dom.yearEnd.addEventListener('change', update);
+  dom.fiscalPartner.addEventListener('change', update);
 
   dom.indexSelect.addEventListener('change', () => {
     const isCustom = dom.indexSelect.value === 'custom';
@@ -436,9 +468,9 @@ function setupEventListeners() {
   const configInputs = [
     dom.oldDeemedReturn, dom.oldTaxRate, dom.oldExemption,
     dom.curTaxRate, dom.curExemption, dom.curSavingsRate,
-    dom.curInvestRate, dom.curDebtRate,
+    dom.curInvestRate, dom.curDebtRate, dom.curDebtThreshold,
     dom.curAllocSavings, dom.curAllocInvest, dom.curAllocDebt,
-    dom.futTaxRate, dom.futFreeReturn
+    dom.futTaxRate, dom.futFreeReturn, dom.futLossThreshold
   ];
 
   configInputs.forEach(input => {
@@ -448,6 +480,25 @@ function setupEventListeners() {
   // System toggles
   document.querySelectorAll('.system-toggle').forEach(toggle => {
     toggle.addEventListener('change', update);
+  });
+
+  // Future info modal
+  if (dom.futInfoBtn && dom.futureInfoModal) {
+    dom.futInfoBtn.addEventListener('click', openFutureInfoModal);
+  }
+  if (dom.futureInfoClose) {
+    dom.futureInfoClose.addEventListener('click', closeFutureInfoModal);
+  }
+  if (dom.futureInfoModal) {
+    dom.futureInfoModal.addEventListener('click', (e) => {
+      if (e.target === dom.futureInfoModal) closeFutureInfoModal();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (!dom.futureInfoModal) return;
+    if (!dom.futureInfoModal.classList.contains('is-open')) return;
+    closeFutureInfoModal();
   });
 }
 

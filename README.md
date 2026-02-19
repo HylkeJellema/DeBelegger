@@ -6,10 +6,11 @@ Een interactieve tool om de impact van het Nederlandse **Box 3 belastingstelsel*
 
 - **Drie belastingregimes** vergelijken:
   - Oud systeem (vóór 2017) — forfaitair rendement van 4%
-  - Huidig systeem (2024–2027) — forfaitaire rendementen op spaargeld & beleggingen
-  - Toekomstig systeem (2028+) — werkelijk rendement belast
+  - Huidig systeem (overbruggingswet) — forfaitaire rendementen op spaargeld, beleggingen en schulden (incl. schuldendrempel)
+  - Toekomstig systeem (2028+) — werkelijk rendement belast (incl. verliesdrempel/carry-forward)
 - **Historische marktdata** — AEX, S&P 500, MSCI All World
 - **Eigen data invoeren** via de marktdata-pagina
+- **Fiscale partner-toggle** — verdubbelt vrijstellingen en drempels
 - Volledig configureerbare parameters per belastingsysteem
 - Interactieve grafieken (vermogensgroei, jaarlijkse belasting, cumulatieve belasting)
 
