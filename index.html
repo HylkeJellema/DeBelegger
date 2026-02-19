@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Box 3 Belasting Calculator — DeBelegger.nl</title>
+    <meta
+      name="description"
+      content="Vergelijk Box 3 belastingsystemen: oud, huidig en toekomstig (2028). Visualiseer de impact op je vermogen met historische AEX, S&P 500 en All World data."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <img src="/assets/logo.png" alt="DeBelegger" class="logo-icon-img" />
+          <h1>Box 3 <span class="accent">Calculator</span></h1>
+        </div>
+        <p class="header-subtitle">
+          Vergelijk de impact van Box 3 belasting op je vermogen
+        </p>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- Quick Controls Bar -->
+      <section class="controls-bar">
+        <div class="controls-row">
+          <div class="control-group">
+            <label for="startCapital">Startkapitaal</label>
+            <div class="input-with-prefix">
+              <span class="prefix">€</span>
+              <input type="number" id="startCapital" value="150000" min="0" step="1000" />
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label for="indexSelect">Index</label>
+            <select id="indexSelect">
+              <option value="sp500" selected>S&P 500 (Total Return)</option>
+              <option value="aex">AEX (Gross Return)</option>
+              <option value="allworld">MSCI All World (Total Return)</option>
+              <option value="custom">Eigen data</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="yearRange">Periode</label>
+            <div class="range-group">
+              <select id="yearStart"></select>
+              <span class="range-sep">→</span>
+              <select id="yearEnd"></select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <nav class="sub-nav">
+        <a href="/data.html" class="nav-link">Marktdata bekijken →</a>
+      </nav>
+
+      <!-- Tax Systems Config (with toggles) -->
+      <section class="config-section">
+        <h2 class="section-title">⚙️ Belastingsystemen</h2>
+
+        <!-- No Tax -->
+        <details class="config-accordion" data-system="noTax">
+          <summary class="config-header">
+            <label class="toggle" onclick="event.stopPropagation()">
+              <input type="checkbox" class="system-toggle" data-system="noTax" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="config-dot" style="background: var(--clr-no-tax)"></span>
+            Geen belasting
+            <span class="config-hint">instellingen</span>
+          </summary>
+          <div class="config-body">
+            <p class="config-note">Geen parameters nodig — dit scenario berekent je vermogen zonder enige belasting.</p>
+          </div>
+        </details>
+
+        <!-- Old System -->
+        <details class="config-accordion" data-system="old">
+          <summary class="config-header">
+            <label class="toggle" onclick="event.stopPropagation()">
+              <input type="checkbox" class="system-toggle" data-system="old" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="config-dot" style="background: var(--clr-old)"></span>
+            Oud systeem (vóór 2017)
+            <span class="config-hint">instellingen</span>
+          </summary>
+          <div class="config-body">
+            <div class="config-grid">
+              <div class="config-field">
+                <label for="oldDeemedReturn">Forfaitair rendement</label>
+                <div class="input-with-suffix"><input type="number" id="oldDeemedReturn" value="4" step="0.1" min="0" /><span>%</span></div>
+              </div>
+              <div class="config-field">
+                <label for="oldTaxRate">Belastingtarief</label>
+                <div class="input-with-suffix"><input type="number" id="oldTaxRate" value="30" step="0.1" min="0" /><span>%</span></div>
+              </div>
+              <div class="config-field">
+                <label for="oldExemption">Heffingsvrij vermogen</label>
+                <div class="input-with-prefix"><span>€</span><input type="number" id="oldExemption" value="21139" step="100" min="0" /></div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Current System -->
+        <details class="config-accordion" data-system="current">
+          <summary class="config-header">
+            <label class="toggle" onclick="event.stopPropagation()">
+              <input type="checkbox" class="system-toggle" data-system="current" checked />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="config-dot" style="background: var(--clr-current)"></span>
+            Huidig systeem (2024-2027)
+            <span class="config-hint">instellingen</span>
+          </summary>
+          <div class="config-body">
+            <div class="config-grid">
+              <div class="config-field">
+                <label for="curTaxRate">Belastingtarief</label>
+                <div class="input-with-suffix"><input type="number" id="curTaxRate" value="36" step="0.1" min="0" /><span>%</span></div>
+              </div>
+              <div class="config-field">
+                <label for="curExemption">Heffingsvrij vermogen</label>
+                <div class="input-with-prefix"><span>€</span><input type="number" id="curExemption" value="57684" step="100" min="0" /></div>
+              </div>
+              <div class="config-field">
+                <label for="curSavingsRate">Forfait spaargeld</label>
+                <div class="input-with-suffix"><input type="number" id="curSavingsRate" value="1.44" step="0.01" min="0" /><span>%</span></div>
+              </div>
+              <div class="config-field">
+                <label for="curInvestRate">Forfait beleggingen</label>
+                <div class="input-with-suffix"><input type="number" id="curInvestRate" value="5.88" step="0.01" min="0" /><span>%</span></div>
+              </div>
+              <div class="config-field">
+                <label for="curDebtRate">Forfait schulden</label>
+                <div class="input-with-suffix"><input type="number" id="curDebtRate" value="2.62" step="0.01" min="0" /><span>%</span></div>
+              </div>
+              <div class="config-field full-width">
+                <label>Verdeling vermogen</label>
+                <div class="allocation-group">
+                  <div class="alloc-item">
+                    <label for="curAllocSavings">Spaargeld</label>
+                    <div class="input-with-suffix"><input type="number" id="curAllocSavings" value="0" step="1" min="0" max="100" /><span>%</span></div>
+                  </div>
+                  <div class="alloc-item">
+                    <label for="curAllocInvest">Beleggingen</label>
+                    <div class="input-with-suffix"><input type="number" id="curAllocInvest" value="100" step="1" min="0" max="100" /><span>%</span></div>
+                  </div>
+                  <div class="alloc-item">
+                    <label for="curAllocDebt">Schulden</label>
+                    <div class="input-with-suffix"><input type="number" id="curAllocDebt" value="0" step="1" min="0" max="100" /><span>%</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Future System 2028 -->
+        <details class="config-accordion" data-system="future">
+          <summary class="config-header">
+            <label class="toggle" onclick="event.stopPropagation()">
+              <input type="checkbox" class="system-toggle" data-system="future" checked />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="config-dot" style="background: var(--clr-future)"></span>
+            Toekomstig systeem (2028+)
+            <span class="config-hint">instellingen</span>
+          </summary>
+          <div class="config-body">
+            <div class="config-grid">
+              <div class="config-field">
+                <label for="futTaxRate">Belastingtarief</label>
+                <div class="input-with-suffix"><input type="number" id="futTaxRate" value="36" step="0.1" min="0" /><span>%</span></div>
+              </div>
+              <div class="config-field">
+                <label for="futFreeReturn">Vrijgesteld rendement</label>
+                <div class="input-with-prefix"><span>€</span><input type="number" id="futFreeReturn" value="1800" step="100" min="0" /></div>
+              </div>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <!-- Charts Section -->
+      <section class="charts-section">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h2>💰 Vermogensgroei</h2>
+            <p class="chart-desc">De waarde van je portfolio over tijd onder elk belastingregime</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartPortfolio"></canvas>
+          </div>
+        </div>
+
+        <!-- Summary Cards (right below Vermogensgroei) -->
+        <section class="summary-section" id="summarySection">
+          <div class="summary-overview" id="summaryGrid">
+            <!-- Filled by JS -->
+          </div>
+        </section>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h2>📉 Jaarlijkse belasting</h2>
+            <p class="chart-desc">Hoeveel belasting je per jaar betaalt</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartAnnualTax"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h2>📊 Totaal betaalde belasting</h2>
+            <p class="chart-desc">Cumulatieve belasting over de gehele periode</p>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartTotalTax"></canvas>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>
+        Disclaimer: Deze tool is uitsluitend bedoeld ter illustratie. Raadpleeg
+        een belastingadviseur voor persoonlijk advies.
+      </p>
+      <p class="footer-credit">
+        Gemaakt door
+        <a href="https://www.linkedin.com/in/hylkej/" target="_blank">Hylke Jellema</a>
+        voor DeBelegger
+      </p>
+    </footer>
+
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>

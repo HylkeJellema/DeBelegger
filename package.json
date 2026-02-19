@@ -1,0 +1,18 @@
+{
+  "name": "debelegger-box3",
+  "version": "1.0.0",
+  "description": "Netherlands Box 3 Tax Calculator",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.8",
+    "xlsx": "^0.18.5"
+  }
+}

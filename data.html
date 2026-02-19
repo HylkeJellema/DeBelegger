@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Marktdata — DeBelegger.nl</title>
+    <meta name="description" content="Bekijk en bewerk historische marktrendementen voor de Box 3 belasting calculator" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <div class="data-header-inner">
+        <a href="/" class="back-btn">← Terug naar calculator</a>
+        <div class="data-header-title">
+          <img src="/assets/logo.png" alt="DeBelegger" class="logo-icon-img" />
+          <div>
+            <h1>Markt<span class="accent">data</span></h1>
+            <p class="header-subtitle">Historische jaarrendementen per index — bewerk of voeg eigen data toe</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="data-table-section">
+        <div class="data-table-wrapper">
+          <table class="data-table" id="dataTable">
+            <thead>
+              <tr id="tableHead">
+                <!-- Filled by JS -->
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <!-- Filled by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="data-actions">
+          <button class="btn btn-primary" id="addYearBtn">+ Jaar toevoegen</button>
+          <button class="btn btn-secondary" id="saveCustomBtn">💾 Opslaan als eigen data</button>
+          <span class="data-status" id="dataStatus"></span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>
+        Disclaimer: Deze tool is uitsluitend bedoeld ter illustratie. Raadpleeg
+        een belastingadviseur voor persoonlijk advies.
+      </p>
+      <p class="footer-credit">
+        Gemaakt door
+        <a href="https://www.linkedin.com/in/hylkej/" target="_blank">Hylke Jellema</a>
+        voor DeBelegger
+      </p>
+    </footer>
+
+    <script type="module" src="/js/data.js"></script>
+  </body>
+</html>
