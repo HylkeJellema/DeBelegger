@@ -19,9 +19,11 @@ import {
  * @param {number} startCapital - Initial investment amount in EUR
  * @param {Array<{year: number, return: number}>} returns - Array of yearly returns
  * @param {Object} configs - Tax system configs { noTax, old, current, future }
+ * @param {number} monthlyContribution - Monthly deposit amount in EUR (end of month)
  * @returns {Object} Simulation results with arrays for each chart
  */
-export function runSimulation(startCapital, returns, configs) {
+export function runSimulation(startCapital, returns, configs, monthlyContribution = 0) {
+  const deposit = Math.max(0, Number(monthlyContribution) || 0);
   const years = returns.map(r => r.year);
 
   // Initialize tracking arrays
@@ -40,14 +42,30 @@ export function runSimulation(startCapital, returns, configs) {
   }
 
   for (let i = 0; i < returns.length; i++) {
-    const yearReturn = returns[i].return / 100; // convert % to decimal
+    const annualRate = returns[i].return / 100; // convert % to decimal
+    const annualFactor = 1 + annualRate;
+    const monthlyFactor = annualFactor <= 0 ? 0 : Math.pow(annualFactor, 1 / 12);
+    const contributionsThisYear = deposit * 12;
 
     for (const sys of systems) {
-      const prevValue = portfolioValues[sys][i];
+      const prevValue = portfolioValues[sys][i]; // peildatum / start-of-year wealth
 
-      // Apply market return
-      const returnAmount = prevValue * yearReturn;
-      const valueAfterReturn = prevValue + returnAmount;
+      // Apply market return with optional monthly contributions (end of month).
+      // When deposit is 0, use the direct annual return for parity with old behavior.
+      let valueAfterReturn;
+      if (deposit <= 0) {
+        valueAfterReturn = prevValue * annualFactor;
+      } else {
+        let value = prevValue;
+        for (let m = 0; m < 12; m++) {
+          value *= monthlyFactor;
+          value += deposit;
+        }
+        valueAfterReturn = value;
+      }
+
+      // Return excluding contributions (deposits are not investment return)
+      const returnAmount = valueAfterReturn - prevValue - contributionsThisYear;
 
       // Calculate tax
       let tax = 0;

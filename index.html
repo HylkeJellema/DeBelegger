@@ -54,6 +54,15 @@
           </div>
 
           <div class="control-group">
+            <label for="monthlyContribution">Maandelijkse inleg</label>
+            <div class="input-with-prefix">
+              <span class="prefix">€</span>
+              <input type="number" id="monthlyContribution" value="0" min="0" step="100" />
+            </div>
+            <p class="control-help">Wordt aan het einde van elke maand ingelegd.</p>
+          </div>
+
+          <div class="control-group">
             <label for="indexSelect">Index</label>
             <select id="indexSelect">
               <option value="sp500" selected>S&P 500 (Total Return)</option>
@@ -71,6 +80,7 @@
               <span class="range-sep">→</span>
               <select id="yearEnd"></select>
             </div>
+            <p class="control-help" id="periodYearsIndicator"></p>
           </div>
 
           <div class="control-group">
@@ -293,7 +303,7 @@
         <div class="modal-body">
           <p class="modal-lead">Deze simulator rekent dit scenario als een eenvoudige belasting op werkelijk rendement (illustratief).</p>
           <ol class="modal-list">
-            <li><strong>Jaarresultaat:</strong> startvermogen × jaarreturn.</li>
+            <li><strong>Jaarresultaat:</strong> per maand rendement (afgeleid van jaarreturn) + maandelijkse inleg (einde maand).</li>
             <li><strong>Heffingsvrij resultaat:</strong> alleen bij positief resultaat: max(0, resultaat − vrijstelling).</li>
             <li><strong>Verlies (carry-forward):</strong> bij negatief resultaat wordt het verlies toegevoegd aan een verliespot, maar alleen als het verlies groter is dan de verliesdrempel.</li>
             <li><strong>Verrekening:</strong> in een positief jaar wordt de verliespot eerst verrekend met het positieve inkomen (na vrijstelling).</li>

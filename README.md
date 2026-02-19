@@ -10,6 +10,7 @@ Een interactieve tool om de impact van het Nederlandse **Box 3 belastingstelsel*
   - Toekomstig systeem (2028+) — werkelijk rendement belast (incl. verliesdrempel/carry-forward)
 - **Historische marktdata** — AEX, S&P 500, MSCI All World
 - **Eigen data invoeren** via de marktdata-pagina
+- **Maandelijkse inleg** — vaste inleg aan het einde van elke maand
 - **Fiscale partner-toggle** — verdubbelt vrijstellingen en drempels
 - Volledig configureerbare parameters per belastingsysteem
 - Interactieve grafieken (vermogensgroei, jaarlijkse belasting, cumulatieve belasting)

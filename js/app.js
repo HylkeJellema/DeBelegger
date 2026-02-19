@@ -49,9 +49,11 @@ const dom = {};
 
 function cacheDom() {
   dom.startCapital = document.getElementById('startCapital');
+  dom.monthlyContribution = document.getElementById('monthlyContribution');
   dom.indexSelect = document.getElementById('indexSelect');
   dom.yearStart = document.getElementById('yearStart');
   dom.yearEnd = document.getElementById('yearEnd');
+  dom.periodYearsIndicator = document.getElementById('periodYearsIndicator');
   dom.fiscalPartner = document.getElementById('fiscalPartner');
   dom.summaryGrid = document.getElementById('summaryGrid');
 
@@ -225,6 +227,23 @@ function getCurrentReturns() {
   return getReturns(indexKey, startYear, endYear);
 }
 
+function updatePeriodYearsIndicator() {
+  if (!dom.periodYearsIndicator) return;
+
+  const startYear = parseInt(dom.yearStart.value);
+  const endYear = parseInt(dom.yearEnd.value);
+
+  if (!Number.isFinite(startYear) || !Number.isFinite(endYear) || endYear < startYear) {
+    dom.periodYearsIndicator.textContent = '';
+    return;
+  }
+
+  const years = endYear - startYear + 1;
+  dom.periodYearsIndicator.textContent = years === 1
+    ? 'Periode: 1 jaar'
+    : `Periode: ${years} jaar`;
+}
+
 // ── Format currency ──
 function formatEUR(amount) {
   return new Intl.NumberFormat('nl-NL', {
@@ -232,6 +251,11 @@ function formatEUR(amount) {
     currency: 'EUR',
     maximumFractionDigits: 0
   }).format(amount);
+}
+
+function parseNumberOrDefault(value, fallback) {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 // ── Create / Update Charts ──
@@ -346,9 +370,15 @@ function buildDatasets(dataObj, systems, activeSystems) {
 
 // ── Summary cards ──
 function updateSummary(result, activeSystems) {
-  const { systems, portfolioValues, cumulativeTax } = result;
+  const { systems, portfolioValues, cumulativeTax, taxLabels } = result;
   const filtered = systems.filter(sys => activeSystems.includes(sys));
-  const startCap = parseFloat(dom.startCapital.value) || 150000;
+  const startCap = parseNumberOrDefault(dom.startCapital.value, 150000);
+  const monthlyContribution = dom.monthlyContribution
+    ? Math.max(0, parseFloat(dom.monthlyContribution.value) || 0)
+    : 0;
+  const yearsCount = Array.isArray(taxLabels) ? taxLabels.length : 0;
+  const totalContributed = monthlyContribution * 12 * yearsCount;
+  const totalInvested = startCap + totalContributed;
 
   if (filtered.length === 0) {
     dom.summaryGrid.innerHTML = '<p style="color: var(--text-muted); padding: 1rem; text-align: center;">Selecteer minstens één belastingsysteem</p>';
@@ -360,7 +390,7 @@ function updateSummary(result, activeSystems) {
     const totalTax = cumulativeTax[sys].length > 0
       ? cumulativeTax[sys][cumulativeTax[sys].length - 1]
       : 0;
-    const profit = finalValue - startCap;
+    const profit = finalValue - totalInvested;
     const profitClass = profit >= 0 ? 'positive' : 'negative';
     const profitSign = profit >= 0 ? '+' : '';
 
@@ -381,8 +411,9 @@ function updateSummary(result, activeSystems) {
 
   dom.summaryGrid.innerHTML = `
     <div class="summary-start">
-      <div class="start-label">Startkapitaal</div>
-      <div class="start-value">${formatEUR(startCap)}</div>
+      <div class="start-label">Totaal ingelegd</div>
+      <div class="start-value">${formatEUR(totalInvested)}</div>
+      <div class="start-meta">Start: ${formatEUR(startCap)} • Inleg: ${formatEUR(monthlyContribution)}/mnd</div>
     </div>
     <div class="summary-arrow">→</div>
     <div class="summary-results">
@@ -395,14 +426,18 @@ function updateSummary(result, activeSystems) {
 function update() {
   readConfigs();
   syncAccordionStates();
+  updatePeriodYearsIndicator();
 
-  const startCapital = parseFloat(dom.startCapital.value) || 150000;
+  const startCapital = parseNumberOrDefault(dom.startCapital.value, 150000);
+  const monthlyContribution = dom.monthlyContribution
+    ? Math.max(0, parseFloat(dom.monthlyContribution.value) || 0)
+    : 0;
   const returns = getCurrentReturns();
   const activeSystems = getActiveSystems();
 
   if (returns.length === 0) return;
 
-  const result = runSimulation(startCapital, returns, configs);
+  const result = runSimulation(startCapital, returns, configs, monthlyContribution);
 
   // Update portfolio chart
   updateChartData(
@@ -444,6 +479,7 @@ function setupEventListeners() {
 
   // Main controls
   dom.startCapital.addEventListener('input', debouncedUpdate);
+  if (dom.monthlyContribution) dom.monthlyContribution.addEventListener('input', debouncedUpdate);
   dom.yearStart.addEventListener('change', update);
   dom.yearEnd.addEventListener('change', update);
   dom.fiscalPartner.addEventListener('change', update);
