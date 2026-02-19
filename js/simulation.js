@@ -50,27 +50,36 @@ export function runSimulation(startCapital, returns, configs) {
           tax = calcNoTax();
           break;
         case 'old':
-          tax = calcOldSystem(valueAfterReturn, returnAmount, configs.old);
+          // Use prevValue (peildatum / start-of-year wealth) as tax base.
+          // The old system taxes deemed return on wealth at 1 January,
+          // so we use the portfolio value before this year's market return.
+          tax = calcOldSystem(prevValue, returnAmount, configs.old);
           break;
         case 'current':
-          tax = calcCurrentSystem(valueAfterReturn, returnAmount, configs.current);
+          // Same peildatum logic: tax is based on wealth at 1 January.
+          tax = calcCurrentSystem(prevValue, returnAmount, configs.current);
           break;
         case 'future': {
-          // Apply loss carry forward
-          let adjustedReturn = returnAmount - futureCarryForwardLoss;
-          if (adjustedReturn < 0) {
-            // Still in loss — carry forward the remaining
-            futureCarryForwardLoss = Math.abs(adjustedReturn);
-            adjustedReturn = 0;
+          // Future system: tax on actual return with loss carry-forward.
+          // futureCarryForwardLoss is >= 0 and represents accumulated
+          // losses from prior years that may offset future gains.
+
+          if (returnAmount <= 0) {
+            // Loss year — accumulate loss for carry-forward, no tax due.
+            futureCarryForwardLoss += Math.abs(returnAmount);
             tax = 0;
           } else {
-            futureCarryForwardLoss = 0;
-            tax = calcFutureSystem(valueAfterReturn, adjustedReturn, configs.future);
-          }
-
-          // If actual return is negative and exceeds €500 threshold, add to carry forward
-          if (returnAmount < 0 && Math.abs(returnAmount) > 500) {
-            futureCarryForwardLoss += Math.abs(returnAmount);
+            // Gain year — offset against any carried-forward losses first.
+            const netReturn = returnAmount - futureCarryForwardLoss;
+            if (netReturn <= 0) {
+              // Gain not enough to cover prior losses; keep the remainder.
+              futureCarryForwardLoss = Math.abs(netReturn);
+              tax = 0;
+            } else {
+              // Losses fully absorbed; tax the remaining gain.
+              futureCarryForwardLoss = 0;
+              tax = calcFutureSystem(valueAfterReturn, netReturn, configs.future);
+            }
           }
           break;
         }

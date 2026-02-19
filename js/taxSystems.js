@@ -78,20 +78,26 @@ export function calcCurrentSystem(portfolioValue, actualReturn, config) {
  * Future System (2028+)
  * - Tax on actual returns
  * - Tax rate: 36%
- * - Tax-free return: €1,800
- * - Loss carry forward (handled in simulation loop)
+ * - Heffingsvrij resultaat: €1,800
+ *   • result ≤ 0        → taxable = 0 (don't create extra negative)
+ *   • 0 < result < 1800 → taxable = 0
+ *   • result ≥ 1800     → taxable = result − 1800
+ * - Loss carry forward is handled in the simulation loop (simulation.js)
  */
 export function calcFutureSystem(portfolioValue, actualReturn, config) {
   const {
     taxRate = 36,            // %
-    freeReturn = 1800        // € tax-free return threshold
+    freeReturn = 1800        // € heffingsvrij resultaat
   } = config;
 
-  // Tax on actual return minus free threshold
+  // Only apply heffingsvrij when actual return is positive;
+  // never let the deduction create a negative taxable amount.
+  if (actualReturn <= 0) return 0;
+
   const taxableReturn = Math.max(0, actualReturn - freeReturn);
   const tax = taxableReturn * (taxRate / 100);
 
-  return Math.max(0, tax);
+  return tax;
 }
 
 /**
