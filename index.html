@@ -60,6 +60,14 @@
               <input type="number" id="monthlyContribution" value="0" min="0" step="100" />
             </div>
             <p class="control-help">Wordt aan het einde van elke maand ingelegd.</p>
+            <div class="cpi-toggle-row">
+              <span>CPI correctie</span>
+              <label class="toggle">
+                <input type="checkbox" id="cpiToggle" />
+                <span class="toggle-slider"></span>
+              </label>
+              <button type="button" class="info-link" id="cpiInfoBtn">Bekijk CPI tabel</button>
+            </div>
           </div>
 
           <div class="control-group">
@@ -205,6 +213,7 @@
                 </div>
               </div>
             </div>
+            <button type="button" class="info-link" id="curInfoBtn">Hoe wordt dit berekend?</button>
           </div>
         </details>
 
@@ -310,6 +319,43 @@
             <li><strong>Belasting:</strong> belastbaar inkomen × tarief.</li>
           </ol>
           <p class="modal-note">Als je “Fiscale partner” aanzet, worden de vrijstelling en verliesdrempel verdubbeld.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info modal: Current box 3 calculations -->
+    <div class="modal-overlay" id="currentInfoModal" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="currentInfoTitle">
+        <div class="modal-header">
+          <h3 id="currentInfoTitle">Huidig Box 3 (overbruggingswet) rekenmethode</h3>
+          <button type="button" class="modal-close" id="currentInfoClose" aria-label="Sluiten">x</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-lead">De berekening volgens de huidige overbruggingswetgeving werkt als volgt:</p>
+          <ol class="modal-list">
+            <li><strong>Vermogensmix:</strong> Je vermogen wordt (in dit model automatisch of handmatig) verdeeld over spaargeld, beleggingen en schulden.</li>
+            <li><strong>Forfaitair rendement:</strong> Elk onderdeel heeft een eigen fictief percentage (bijv. 6,00% voor beleggen).</li>
+            <li><strong>Totaal forfaitair rendement:</strong> Wordt berekend door de mix te vermenigvuldigen met deze percentages.</li>
+            <li><strong>Rendementsgrondslag:</strong> Je totale vermogen zónder heffingsvrij vermogen.</li>
+            <li><strong>Belastbaar rendement:</strong> (Rendementsgrondslag / Totale vermogen) × Totaal forfaitair rendement.</li>
+            <li><strong>Belasting:</strong> Belastbaar rendement × tarief.</li>
+          </ol>
+          <p class="modal-note">Als je “Fiscale partner” aanzet, wordt het heffingsvrij vermogen verdubbeld. Schulden tellen mee na aftrek van de drempel.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CPI Inflation Modal -->
+    <div class="modal-overlay" id="cpiModal" aria-hidden="true">
+      <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="cpiModalTitle">
+        <div class="modal-header">
+          <h3 id="cpiModalTitle">CPI Inflatie Correctie</h3>
+          <button type="button" class="modal-close" id="cpiModalClose" aria-label="Sluiten">x</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-lead">De maandelijkse inleg wordt jaarlijks gecorrigeerd voor inflatie op basis van CPI data van het CBS.</p>
+          <div id="cpiTableContainer"></div>
+          <p class="modal-note">Bron: CBS (Centraal Bureau voor de Statistiek)</p>
         </div>
       </div>
     </div>

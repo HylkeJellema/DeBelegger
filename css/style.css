@@ -415,6 +415,84 @@ select:focus {
   line-height: 1.5;
 }
 
+/* CPI Toggle Row */
+.cpi-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.45rem;
+}
+
+.cpi-toggle-row span {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.cpi-toggle-row .info-link {
+  margin-top: 0;
+  margin-left: auto;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.72rem;
+}
+
+/* Wider modal variant for tables */
+.modal-wide {
+  width: min(560px, 100%);
+}
+
+/* CPI Table */
+.cpi-table-wrap {
+  max-height: 400px;
+  overflow-y: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  margin-top: 0.75rem;
+}
+
+.cpi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.cpi-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.cpi-table th {
+  background: var(--bg-card-hover);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cpi-table td {
+  padding: 0.5rem 0.85rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.cpi-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.cpi-table tbody tr:hover {
+  background: rgba(245, 166, 35, 0.06);
+}
+
+.cpi-table .cpi-highlight {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 /* Excel Upload */
 .excel-upload {
   animation: fadeIn 0.3s ease;

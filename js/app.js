@@ -16,7 +16,7 @@ import {
   Legend
 } from 'chart.js';
 
-import { marketData, getAvailableYears, getReturns } from './marketData.js';
+import { marketData, getAvailableYears, getReturns, cpiData, getCpiForYear } from './marketData.js';
 import { getDefaultConfigs } from './taxSystems.js';
 import { runSimulation } from './simulation.js';
 
@@ -82,6 +82,18 @@ function cacheDom() {
   dom.futInfoBtn = document.getElementById('futInfoBtn');
   dom.futureInfoModal = document.getElementById('futureInfoModal');
   dom.futureInfoClose = document.getElementById('futureInfoClose');
+
+  // Current info modal
+  dom.curInfoBtn = document.getElementById('curInfoBtn');
+  dom.currentInfoModal = document.getElementById('currentInfoModal');
+  dom.currentInfoClose = document.getElementById('currentInfoClose');
+
+  // CPI elements
+  dom.cpiToggle = document.getElementById('cpiToggle');
+  dom.cpiInfoBtn = document.getElementById('cpiInfoBtn');
+  dom.cpiModal = document.getElementById('cpiModal');
+  dom.cpiModalClose = document.getElementById('cpiModalClose');
+  dom.cpiTableContainer = document.getElementById('cpiTableContainer');
 }
 
 function openFutureInfoModal() {
@@ -98,6 +110,107 @@ function closeFutureInfoModal() {
   dom.futureInfoModal.classList.remove('is-open');
   dom.futureInfoModal.setAttribute('aria-hidden', 'true');
   if (dom.futInfoBtn) dom.futInfoBtn.focus();
+}
+
+function openCurrentInfoModal() {
+  if (!dom.currentInfoModal) return;
+  document.body.classList.add('modal-open');
+  dom.currentInfoModal.classList.add('is-open');
+  dom.currentInfoModal.setAttribute('aria-hidden', 'false');
+  if (dom.currentInfoClose) dom.currentInfoClose.focus();
+}
+
+function closeCurrentInfoModal() {
+  if (!dom.currentInfoModal) return;
+  document.body.classList.remove('modal-open');
+  dom.currentInfoModal.classList.remove('is-open');
+  dom.currentInfoModal.setAttribute('aria-hidden', 'true');
+  if (dom.curInfoBtn) dom.curInfoBtn.focus();
+}
+
+function openCpiModal() {
+  if (!dom.cpiModal) return;
+  // Render table with current settings before showing
+  const base = dom.monthlyContribution ? Math.max(0, parseFloat(dom.monthlyContribution.value) || 0) : 0;
+  const startYear = parseInt(dom.yearStart.value);
+  const endYear = parseInt(dom.yearEnd.value);
+  const cpiEnabled = dom.cpiToggle ? dom.cpiToggle.checked : false;
+  renderCpiTable(base, startYear, endYear, cpiEnabled);
+  document.body.classList.add('modal-open');
+  dom.cpiModal.classList.add('is-open');
+  dom.cpiModal.setAttribute('aria-hidden', 'false');
+  if (dom.cpiModalClose) dom.cpiModalClose.focus();
+}
+
+function closeCpiModal() {
+  if (!dom.cpiModal) return;
+  document.body.classList.remove('modal-open');
+  dom.cpiModal.classList.remove('is-open');
+  dom.cpiModal.setAttribute('aria-hidden', 'true');
+  if (dom.cpiInfoBtn) dom.cpiInfoBtn.focus();
+}
+
+/**
+ * Build a contributions-by-year map.
+ * When CPI is enabled, the base amount is compounded yearly by CPI rate.
+ * The first year uses the base amount, subsequent years adjust.
+ */
+function buildContributionsByYear(baseAmount, startYear, endYear, cpiEnabled) {
+  const map = {};
+  let amount = baseAmount;
+  for (let y = startYear; y <= endYear; y++) {
+    if (cpiEnabled && y > startYear) {
+      const rate = getCpiForYear(y);
+      amount = amount * (1 + rate / 100);
+    }
+    map[y] = Math.round(amount * 100) / 100;
+  }
+  return map;
+}
+
+/**
+ * Render CPI table inside the modal
+ */
+function renderCpiTable(baseAmount, startYear, endYear, cpiEnabled) {
+  if (!dom.cpiTableContainer) return;
+  if (!Number.isFinite(startYear) || !Number.isFinite(endYear) || endYear < startYear) {
+    dom.cpiTableContainer.innerHTML = '<p style="color: var(--text-muted);">Selecteer een geldige periode.</p>';
+    return;
+  }
+
+  const contribs = buildContributionsByYear(baseAmount, startYear, endYear, cpiEnabled);
+
+  let rows = '';
+  for (let y = startYear; y <= endYear; y++) {
+    const cpi = getCpiForYear(y);
+    const monthly = contribs[y];
+    const yearly = monthly * 12;
+    const cpiStr = cpiEnabled && y > startYear
+      ? `${cpi >= 0 ? '+' : ''}${cpi.toFixed(1)}%`
+      : (y === startYear && cpiEnabled ? '—' : '—');
+    const highlight = cpiEnabled && y > startYear ? ' class="cpi-highlight"' : '';
+    rows += `<tr>
+      <td>${y}</td>
+      <td>${cpiStr}</td>
+      <td${highlight}>€${monthly.toFixed(2)}</td>
+      <td${highlight}>€${yearly.toFixed(2)}</td>
+    </tr>`;
+  }
+
+  dom.cpiTableContainer.innerHTML = `
+    <div class="cpi-table-wrap">
+      <table class="cpi-table">
+        <thead>
+          <tr>
+            <th>Jaar</th>
+            <th>CPI</th>
+            <th>Maandinleg</th>
+            <th>Jaarinleg</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 // ── Get active (toggled-on) systems ──
@@ -373,11 +486,14 @@ function updateSummary(result, activeSystems) {
   const { systems, portfolioValues, cumulativeTax, taxLabels } = result;
   const filtered = systems.filter(sys => activeSystems.includes(sys));
   const startCap = parseNumberOrDefault(dom.startCapital.value, 150000);
-  const monthlyContribution = dom.monthlyContribution
+  const baseContrib = dom.monthlyContribution
     ? Math.max(0, parseFloat(dom.monthlyContribution.value) || 0)
     : 0;
-  const yearsCount = Array.isArray(taxLabels) ? taxLabels.length : 0;
-  const totalContributed = monthlyContribution * 12 * yearsCount;
+  const cpiEnabled = dom.cpiToggle ? dom.cpiToggle.checked : false;
+  const startYear = parseInt(dom.yearStart.value);
+  const endYear = parseInt(dom.yearEnd.value);
+  const contribs = buildContributionsByYear(baseContrib, startYear, endYear, cpiEnabled);
+  const totalContributed = Object.values(contribs).reduce((sum, m) => sum + m * 12, 0);
   const totalInvested = startCap + totalContributed;
 
   if (filtered.length === 0) {
@@ -413,7 +529,7 @@ function updateSummary(result, activeSystems) {
     <div class="summary-start">
       <div class="start-label">Totaal ingelegd</div>
       <div class="start-value">${formatEUR(totalInvested)}</div>
-      <div class="start-meta">Start: ${formatEUR(startCap)} • Inleg: ${formatEUR(monthlyContribution)}/mnd</div>
+      <div class="start-meta">Start: ${formatEUR(startCap)} • Inleg: ${formatEUR(baseContrib)}/mnd${cpiEnabled ? ' (CPI)' : ''}</div>
     </div>
     <div class="summary-arrow">→</div>
     <div class="summary-results">
@@ -429,15 +545,19 @@ function update() {
   updatePeriodYearsIndicator();
 
   const startCapital = parseNumberOrDefault(dom.startCapital.value, 150000);
-  const monthlyContribution = dom.monthlyContribution
+  const baseContrib = dom.monthlyContribution
     ? Math.max(0, parseFloat(dom.monthlyContribution.value) || 0)
     : 0;
+  const cpiEnabled = dom.cpiToggle ? dom.cpiToggle.checked : false;
   const returns = getCurrentReturns();
   const activeSystems = getActiveSystems();
 
   if (returns.length === 0) return;
 
-  const result = runSimulation(startCapital, returns, configs, monthlyContribution);
+  const startYear = parseInt(dom.yearStart.value);
+  const endYear = parseInt(dom.yearEnd.value);
+  const contributionsByYear = buildContributionsByYear(baseContrib, startYear, endYear, cpiEnabled);
+  const result = runSimulation(startCapital, returns, configs, contributionsByYear);
 
   // Update portfolio chart
   updateChartData(
@@ -518,6 +638,9 @@ function setupEventListeners() {
     toggle.addEventListener('change', update);
   });
 
+  // CPI toggle
+  if (dom.cpiToggle) dom.cpiToggle.addEventListener('change', update);
+
   // Future info modal
   if (dom.futInfoBtn && dom.futureInfoModal) {
     dom.futInfoBtn.addEventListener('click', openFutureInfoModal);
@@ -530,11 +653,47 @@ function setupEventListeners() {
       if (e.target === dom.futureInfoModal) closeFutureInfoModal();
     });
   }
+
+  // Current info modal
+  if (dom.curInfoBtn && dom.currentInfoModal) {
+    dom.curInfoBtn.addEventListener('click', openCurrentInfoModal);
+  }
+  if (dom.currentInfoClose) {
+    dom.currentInfoClose.addEventListener('click', closeCurrentInfoModal);
+  }
+  if (dom.currentInfoModal) {
+    dom.currentInfoModal.addEventListener('click', (e) => {
+      if (e.target === dom.currentInfoModal) closeCurrentInfoModal();
+    });
+  }
+
+  // CPI modal
+  if (dom.cpiInfoBtn && dom.cpiModal) {
+    dom.cpiInfoBtn.addEventListener('click', openCpiModal);
+  }
+  if (dom.cpiModalClose) {
+    dom.cpiModalClose.addEventListener('click', closeCpiModal);
+  }
+  if (dom.cpiModal) {
+    dom.cpiModal.addEventListener('click', (e) => {
+      if (e.target === dom.cpiModal) closeCpiModal();
+    });
+  }
+
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (!dom.futureInfoModal) return;
-    if (!dom.futureInfoModal.classList.contains('is-open')) return;
-    closeFutureInfoModal();
+    if (dom.futureInfoModal && dom.futureInfoModal.classList.contains('is-open')) {
+      closeFutureInfoModal();
+      return;
+    }
+    if (dom.currentInfoModal && dom.currentInfoModal.classList.contains('is-open')) {
+      closeCurrentInfoModal();
+      return;
+    }
+    if (dom.cpiModal && dom.cpiModal.classList.contains('is-open')) {
+      closeCpiModal();
+      return;
+    }
   });
 }
 

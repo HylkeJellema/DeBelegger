@@ -19,11 +19,12 @@ import {
  * @param {number} startCapital - Initial investment amount in EUR
  * @param {Array<{year: number, return: number}>} returns - Array of yearly returns
  * @param {Object} configs - Tax system configs { noTax, old, current, future }
- * @param {number} monthlyContribution - Monthly deposit amount in EUR (end of month)
+ * @param {Object|number} contributionsByYear - Map of { year: monthlyAmount } or a flat number for backwards compat
  * @returns {Object} Simulation results with arrays for each chart
  */
-export function runSimulation(startCapital, returns, configs, monthlyContribution = 0) {
-  const deposit = Math.max(0, Number(monthlyContribution) || 0);
+export function runSimulation(startCapital, returns, configs, contributionsByYear = 0) {
+  // Support both old flat number and new per-year map
+  const isMap = typeof contributionsByYear === 'object' && contributionsByYear !== null;
   const years = returns.map(r => r.year);
 
   // Initialize tracking arrays
@@ -42,6 +43,10 @@ export function runSimulation(startCapital, returns, configs, monthlyContributio
   }
 
   for (let i = 0; i < returns.length; i++) {
+    const yearKey = returns[i].year;
+    const deposit = isMap
+      ? Math.max(0, Number(contributionsByYear[yearKey]) || 0)
+      : Math.max(0, Number(contributionsByYear) || 0);
     const annualRate = returns[i].return / 100; // convert % to decimal
     const annualFactor = 1 + annualRate;
     const monthlyFactor = annualFactor <= 0 ? 0 : Math.pow(annualFactor, 1 / 12);
