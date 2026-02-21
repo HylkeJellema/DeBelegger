@@ -31,6 +31,7 @@
           Made by
           <a href="https://www.linkedin.com/in/hylkej/" target="_blank" rel="noopener noreferrer">Hylke</a>
         </p>
+        <button type="button" class="algo-info-toggle" id="algoInfoToggle">Hoe werkt het? ▾</button>
         <div class="logo">
           <img src="/assets/logo.png" alt="DeBelegger" class="logo-icon-img" />
           <h1>Box 3 <span class="accent">Belasting Simulatie</span></h1>
@@ -40,6 +41,273 @@
         </p>
       </div>
     </header>
+
+    <!-- Algorithm Information Section -->
+    <div class="algo-info-panel" id="algoInfoPanel" aria-hidden="true">
+      <div class="algo-info-inner">
+        <div class="algo-close-row">
+          <h2 class="algo-info-title">Technische Documentatie — Rekenalgoritmen</h2>
+          <button type="button" class="modal-close" id="algoInfoClose" aria-label="Sluiten">x</button>
+        </div>
+
+        <!-- Simulation Engine -->
+        <div class="algo-block">
+          <h3>1. Simulatie-engine</h3>
+          <p>De simulator loopt jaar voor jaar door de geselecteerde historische rendementen. Per jaar worden de volgende stappen doorlopen voor <em>elk</em> belastingregime parallel:</p>
+          <div class="algo-steps">
+            <div class="algo-step">
+              <span class="algo-step-num">1.1</span>
+              <div>
+                <strong>Peildatum (1 januari)</strong>
+                <p>De portfoliowaarde aan het begin van het jaar (<code>prevValue</code>) dient als grondslag voor de belastingberekening. Dit reflecteert de wettelijke peildatum van 1 januari.</p>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">1.2</span>
+              <div>
+                <strong>Maandelijks rendement &amp; inleg</strong>
+                <p>Het jaarrendement <code>r</code> wordt omgerekend naar een maandelijks rendement via de formule:</p>
+                <pre class="algo-formula">monthlyFactor = (1 + r)<sup>1/12</sup></pre>
+                <p>Vervolgens wordt per maand het vermogen gecompound en de maandelijkse inleg toegevoegd (einde maand):</p>
+                <pre class="algo-formula">V<sub>m+1</sub> = V<sub>m</sub> × monthlyFactor + inleg</pre>
+                <p>Als er geen inleg is, wordt het directe jaarrendement toegepast: <code>V × (1 + r)</code>.</p>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">1.3</span>
+              <div>
+                <strong>Werkelijk rendement</strong>
+                <p>Het werkelijke rendement wordt berekend exclusief de stortingen:</p>
+                <pre class="algo-formula">rendement = V<sub>einde</sub> − V<sub>begin</sub> − (inleg × 12)</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">1.4</span>
+              <div>
+                <strong>Belastingberekening</strong>
+                <p>Per regime wordt de belasting berekend (zie secties hieronder). De belasting mag nooit hoger zijn dan de portfoliowaarde:</p>
+                <pre class="algo-formula">belasting = min(berekende belasting, max(0, V<sub>einde</sub>))</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">1.5</span>
+              <div>
+                <strong>Waarde na belasting</strong>
+                <p>Het eindvermogen van het jaar wordt de startwaarde van het volgende jaar:</p>
+                <pre class="algo-formula">V<sub>na belasting</sub> = V<sub>einde</sub> − belasting</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CPI Correction -->
+        <div class="algo-block">
+          <h3>2. CPI-correctie (optioneel)</h3>
+          <p>Wanneer de CPI-toggle actief is, wordt de maandelijkse inleg jaarlijks gecorrigeerd voor inflatie op basis van historische CPI-data van het CBS. De inleg in jaar <code>t</code> wordt berekend als:</p>
+          <pre class="algo-formula">inleg<sub>t</sub> = basisinleg × ∏<sub>j=startjaar</sub><sup>t</sup> (1 + CPI<sub>j</sub> / 100)</pre>
+          <p>Dit simuleert het scenario waarin je jaarlijks je inleg opschroeft met de inflatie, zodat je koopkracht constant blijft.</p>
+        </div>
+
+        <hr class="algo-divider" />
+
+        <!-- Old System -->
+        <div class="algo-block">
+          <h3>3. Oud systeem (vóór 2017)</h3>
+          <p>Het oude Box 3-stelsel werkte met een <strong>vast forfaitair rendement</strong>, ongeacht de werkelijke samenstelling van het vermogen.</p>
+          <table class="algo-params-table">
+            <thead><tr><th>Parameter</th><th>Beschrijving</th></tr></thead>
+            <tbody>
+              <tr><td>Forfaitair rendement</td><td>Fictief rendement dat op het belastbare vermogen wordt toegepast</td></tr>
+              <tr><td>Belastingtarief</td><td>Vast tarief over het forfaitaire inkomen</td></tr>
+              <tr><td>Heffingsvrij vermogen</td><td>Per persoon; bij fiscale partner verdubbeld</td></tr>
+            </tbody>
+          </table>
+          <div class="algo-steps">
+            <div class="algo-step">
+              <span class="algo-step-num">a</span>
+              <div>
+                <strong>Belastbaar vermogen</strong>
+                <pre class="algo-formula">belastbaar = max(0, vermogen − heffingsvrij × partnerMultiplier)</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">b</span>
+              <div>
+                <strong>Forfaitair inkomen</strong>
+                <pre class="algo-formula">inkomen = belastbaar × (forfaitair rendement / 100)</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">c</span>
+              <div>
+                <strong>Belasting</strong>
+                <pre class="algo-formula">belasting = max(0, inkomen × tarief / 100)</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="algo-divider" />
+
+        <!-- Current System -->
+        <div class="algo-block">
+          <h3>4. Huidig systeem — Overbruggingswet</h3>
+          <p>Het huidige stelsel verdeelt het vermogen in drie categorieën, elk met een eigen <strong>forfaitair rendementspercentage</strong>. De percentages worden jaarlijks vastgesteld op basis van werkelijke marktrendementen.</p>
+          <table class="algo-params-table">
+            <thead><tr><th>Parameter</th><th>Beschrijving</th></tr></thead>
+            <tbody>
+              <tr><td>Belastingtarief</td><td>Vast tarief over het voordeel uit sparen en beleggen</td></tr>
+              <tr><td>Heffingsvrij vermogen</td><td>Per persoon; bij fiscale partner verdubbeld</td></tr>
+              <tr><td>Drempel schulden</td><td>Per persoon; schulden onder de drempel tellen niet mee</td></tr>
+              <tr><td>Forfait spaargeld</td><td>Fictief rendement op spaargeld</td></tr>
+              <tr><td>Forfait beleggingen</td><td>Fictief rendement op beleggingen</td></tr>
+              <tr><td>Forfait schulden</td><td>Aftrekbaar fictief rendement op schulden</td></tr>
+            </tbody>
+          </table>
+          <div class="algo-steps">
+            <div class="algo-step">
+              <span class="algo-step-num">a</span>
+              <div>
+                <strong>Vermogensmix normaliseren</strong>
+                <p>De procentuele verdeling over spaargeld, beleggingen en schulden wordt genormaliseerd tot 100%:</p>
+                <pre class="algo-formula">share<sub>i</sub> = alloc<sub>i</sub> / Σ alloc</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">b</span>
+              <div>
+                <strong>Porties en aftrekbare schuld</strong>
+                <pre class="algo-formula">spaarportion = vermogen × share<sub>sparen</sub>
+beleggingportion = vermogen × share<sub>beleggen</sub>
+schuldportion = vermogen × share<sub>schuld</sub>
+aftrekbare schuld = max(0, schuldportion − drempel × partnerMultiplier)</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">c</span>
+              <div>
+                <strong>Forfaitair rendement (totaal)</strong>
+                <pre class="algo-formula">forfaitair = spaarportion × forfait<sub>sparen</sub> + beleggingportion × forfait<sub>beleggen</sub> − aftrekbare schuld × forfait<sub>schuld</sub></pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">d</span>
+              <div>
+                <strong>Rendementsgrondslag</strong>
+                <pre class="algo-formula">grondslag = spaarportion + beleggingportion − aftrekbare schuld</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">e</span>
+              <div>
+                <strong>Grondslag sparen &amp; beleggen</strong>
+                <pre class="algo-formula">grondslag S&B = max(0, grondslag − heffingsvrij × partnerMultiplier)</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">f</span>
+              <div>
+                <strong>Voordeel uit sparen en beleggen</strong>
+                <pre class="algo-formula">aandeel = min(1, grondslag S&B / grondslag)
+voordeel = forfaitair × aandeel</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">g</span>
+              <div>
+                <strong>Belasting</strong>
+                <pre class="algo-formula">belasting = max(0, voordeel × tarief / 100)</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="algo-divider" />
+
+        <!-- Future System -->
+        <div class="algo-block">
+          <h3>5. Toekomstig systeem (2028+)</h3>
+          <p>Het voorgestelde nieuwe stelsel belast het <strong>werkelijke rendement</strong> in plaats van een fictief rendement. Het bevat een heffingsvrij resultaat en een verliesverrekeningssysteem (carry-forward).</p>
+          <table class="algo-params-table">
+            <thead><tr><th>Parameter</th><th>Beschrijving</th></tr></thead>
+            <tbody>
+              <tr><td>Belastingtarief</td><td>Tarief over het belastbaar inkomen</td></tr>
+              <tr><td>Heffingsvrij resultaat</td><td>Per persoon; wordt alleen afgetrokken bij positief rendement</td></tr>
+              <tr><td>Verliesdrempel</td><td>Per persoon; verlies wordt alleen geregistreerd als het groter is dan deze drempel</td></tr>
+            </tbody>
+          </table>
+          <div class="algo-steps">
+            <div class="algo-step">
+              <span class="algo-step-num">a</span>
+              <div>
+                <strong>Stap 1 — Inkomen na heffingsvrij resultaat</strong>
+                <p>Bij positief werkelijk rendement:</p>
+                <pre class="algo-formula">inkomen = max(0, werkelijk rendement − heffingsvrij × partnerMultiplier)</pre>
+                <p>Bij negatief werkelijk rendement wordt het verlies ongewijzigd doorgegeven.</p>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">b</span>
+              <div>
+                <strong>Stap 2 — Verliesverrekening (carry-forward)</strong>
+                <p>Als het inkomen <strong>negatief</strong> is en het absoluut verlies de verliesdrempel overschrijdt, wordt het verlies toegevoegd aan de verliespot:</p>
+                <pre class="algo-formula">als |inkomen| &gt; drempel × partnerMultiplier:
+    verliespot += |inkomen|</pre>
+                <p>Als het inkomen <strong>positief</strong> is, wordt eerst de opgebouwde verliespot verrekend:</p>
+                <pre class="algo-formula">verrekend = min(verliespot, inkomen)
+verliespot −= verrekend
+belastbaar = inkomen − verrekend</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">c</span>
+              <div>
+                <strong>Stap 3 — Belasting</strong>
+                <pre class="algo-formula">belasting = max(0, belastbaar inkomen) × tarief / 100</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="algo-divider" />
+
+        <!-- Shared mechanics -->
+        <div class="algo-block">
+          <h3>6. Gedeelde mechanismen</h3>
+          <div class="algo-steps">
+            <div class="algo-step">
+              <span class="algo-step-num">A</span>
+              <div>
+                <strong>Fiscale partner</strong>
+                <p>Wanneer de fiscale partner toggle actief is, worden alle vrijstellingen en drempels verdubbeld (<code>partnerMultiplier = 2</code>).</p>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">B</span>
+              <div>
+                <strong>Peildatum</strong>
+                <p>Het oude en huidige systeem gebruiken het vermogen op <strong>1 januari</strong> (begin van het jaar) als heffingsgrondslag. Het toekomstige systeem werkt met het werkelijke rendement over het gehele jaar.</p>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">C</span>
+              <div>
+                <strong>Markdata</strong>
+                <p>Historische rendementen zijn beschikbaar voor: S&amp;P 500 (Total Return, USD), AEX (Gross Return, EUR), MSCI All World (Total Return, USD), en Ethereum (USD). Alle rendementen zijn inclusief dividenden / total return.</p>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">D</span>
+              <div>
+                <strong>Geen belasting-scenario</strong>
+                <p>Het "Geen belasting"-scenario returnt altijd € 0 belasting en dient als benchmark om de impact van elk belastingstelsel te isoleren.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
 
     <main class="main">
       <!-- Quick Controls Bar -->

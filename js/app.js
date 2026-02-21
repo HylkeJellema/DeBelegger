@@ -94,6 +94,11 @@ function cacheDom() {
   dom.cpiModal = document.getElementById('cpiModal');
   dom.cpiModalClose = document.getElementById('cpiModalClose');
   dom.cpiTableContainer = document.getElementById('cpiTableContainer');
+
+  // Algorithm info panel
+  dom.algoInfoToggle = document.getElementById('algoInfoToggle');
+  dom.algoInfoPanel = document.getElementById('algoInfoPanel');
+  dom.algoInfoClose = document.getElementById('algoInfoClose');
 }
 
 function openFutureInfoModal() {
@@ -680,8 +685,30 @@ function setupEventListeners() {
     });
   }
 
+  // Algorithm info panel toggle
+  if (dom.algoInfoToggle && dom.algoInfoPanel) {
+    dom.algoInfoToggle.addEventListener('click', () => {
+      const isOpen = dom.algoInfoPanel.classList.toggle('is-open');
+      dom.algoInfoPanel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      dom.algoInfoToggle.textContent = isOpen ? 'Hoe werkt het? ▴' : 'Hoe werkt het? ▾';
+    });
+  }
+  if (dom.algoInfoClose) {
+    dom.algoInfoClose.addEventListener('click', () => {
+      dom.algoInfoPanel.classList.remove('is-open');
+      dom.algoInfoPanel.setAttribute('aria-hidden', 'true');
+      dom.algoInfoToggle.textContent = 'Hoe werkt het? ▾';
+    });
+  }
+
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    if (dom.algoInfoPanel && dom.algoInfoPanel.classList.contains('is-open')) {
+      dom.algoInfoPanel.classList.remove('is-open');
+      dom.algoInfoPanel.setAttribute('aria-hidden', 'true');
+      if (dom.algoInfoToggle) dom.algoInfoToggle.textContent = 'Hoe werkt het? ▾';
+      return;
+    }
     if (dom.futureInfoModal && dom.futureInfoModal.classList.contains('is-open')) {
       closeFutureInfoModal();
       return;
