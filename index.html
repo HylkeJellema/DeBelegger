@@ -149,9 +149,62 @@
 
         <hr class="algo-divider" />
 
+        <!-- Old Method 2017-2022 -->
+        <div class="algo-block">
+          <h3>4. Oude methode (2017–2022)</h3>
+          <p>Het systeem van 2017–2022 verdeelt de grondslag sparen en beleggen over <strong>3 schijven</strong>. Per schijf wordt een fictieve mix van spaargeld en beleggingen verondersteld, met elk hun eigen forfaitair rendementspercentage. Alle parameters wijzigen per jaar.</p>
+          <table class="algo-params-table">
+            <thead><tr><th>Parameter</th><th>Beschrijving</th></tr></thead>
+            <tbody>
+              <tr><td>Schijf 1 grens</td><td>Bovengrens grondslag voor schijf 1 (per jaar verschillend)</td></tr>
+              <tr><td>Schijf 2 grens</td><td>Bovengrens grondslag voor schijf 2</td></tr>
+              <tr><td>Spaartarief</td><td>Fictief rendement op het spaardeel (kan negatief zijn vanaf 2022)</td></tr>
+              <tr><td>Beleggingstarief</td><td>Fictief rendement op het beleggingsdeel</td></tr>
+              <tr><td>Belastingtarief</td><td>30% (2017-2020) of 31% (2021-2022)</td></tr>
+              <tr><td>Heffingsvrij vermogen</td><td>Per persoon; bij fiscale partner verdubbeld</td></tr>
+            </tbody>
+          </table>
+          <div class="algo-steps">
+            <div class="algo-step">
+              <span class="algo-step-num">a</span>
+              <div>
+                <strong>Grondslag sparen en beleggen</strong>
+                <pre class="algo-formula">grondslag = max(0, vermogen − heffingsvrij × partnerMultiplier)</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">b</span>
+              <div>
+                <strong>Verdeling over schijven</strong>
+                <pre class="algo-formula">schijf 1 = min(grondslag, grens₁)
+schijf 2 = min(max(0, grondslag − grens₁), grens₂ − grens₁)
+schijf 3 = max(0, grondslag − grens₂)</pre>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">c</span>
+              <div>
+                <strong>Fictief rendement per schijf</strong>
+                <p>Per schijf wordt de fictieve mix (spaar/beleg) vermenigvuldigd met het bijbehorende rendement:</p>
+                <pre class="algo-formula">rendement<sub>i</sub> = bedrag<sub>i</sub> × (spaaraandeel<sub>i</sub> × spaartarief + belegaandeel<sub>i</sub> × belegtarief)</pre>
+                <p>Schijf 1: 67% sparen / 33% beleggen. Schijf 2: 21% / 79%. Schijf 3: 0% / 100%.</p>
+              </div>
+            </div>
+            <div class="algo-step">
+              <span class="algo-step-num">d</span>
+              <div>
+                <strong>Belasting</strong>
+                <pre class="algo-formula">belasting = max(0, Σ rendement<sub>i</sub>) × tarief / 100</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="algo-divider" />
+
         <!-- Current System -->
         <div class="algo-block">
-          <h3>4. Huidig systeem — Overbruggingswet</h3>
+          <h3>5. Huidig systeem — Overbruggingswet</h3>
           <p>Het huidige stelsel verdeelt het vermogen in drie categorieën, elk met een eigen <strong>forfaitair rendementspercentage</strong>. De percentages worden jaarlijks vastgesteld op basis van werkelijke marktrendementen.</p>
           <table class="algo-params-table">
             <thead><tr><th>Parameter</th><th>Beschrijving</th></tr></thead>
@@ -226,7 +279,7 @@ voordeel = forfaitair × aandeel</pre>
 
         <!-- Future System -->
         <div class="algo-block">
-          <h3>5. Toekomstig systeem (2028+)</h3>
+          <h3>6. Toekomstig systeem (2028+)</h3>
           <p>Het voorgestelde nieuwe stelsel belast het <strong>werkelijke rendement</strong> in plaats van een fictief rendement. Het bevat een heffingsvrij resultaat en een verliesverrekeningssysteem (carry-forward).</p>
           <table class="algo-params-table">
             <thead><tr><th>Parameter</th><th>Beschrijving</th></tr></thead>
@@ -273,7 +326,7 @@ belastbaar = inkomen − verrekend</pre>
 
         <!-- Shared mechanics -->
         <div class="algo-block">
-          <h3>6. Gedeelde mechanismen</h3>
+          <h3>7. Gedeelde mechanismen</h3>
           <div class="algo-steps">
             <div class="algo-step">
               <span class="algo-step-num">A</span>
@@ -423,6 +476,59 @@ belastbaar = inkomen − verrekend</pre>
                 <div class="input-with-prefix"><span>€</span><input type="number" id="oldExemption" value="21139" step="100" min="0" /></div>
               </div>
             </div>
+          </div>
+        </details>
+
+        <!-- Old Method (2017-2022) -->
+        <details class="config-accordion" data-system="oldMethod">
+          <summary class="config-header">
+            <label class="toggle" onclick="event.stopPropagation()">
+              <input type="checkbox" class="system-toggle" data-system="oldMethod" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="config-dot" style="background: #9b59b6"></span>
+            Oude methode (2017–2022)
+            <span class="config-hint">instellingen</span>
+          </summary>
+          <div class="config-body">
+            <div class="config-grid">
+              <div class="config-field">
+                <label for="oldMethodYear">Voorinstellingen per jaar</label>
+                <select id="oldMethodYear">
+                  <option value="2022" selected>2022</option>
+                  <option value="2021">2021</option>
+                  <option value="2020">2020</option>
+                  <option value="2019">2019</option>
+                  <option value="2018">2018</option>
+                  <option value="2017">2017</option>
+                </select>
+              </div>
+              <div class="config-field">
+                <label for="omTaxRate">Belastingtarief</label>
+                <div class="input-with-suffix"><input type="number" id="omTaxRate" value="31" step="0.1" min="0" /><span>%</span></div>
+              </div>
+              <div class="config-field">
+                <label for="omExemption">Heffingsvrij vermogen</label>
+                <div class="input-with-prefix"><span>€</span><input type="number" id="omExemption" value="50650" step="100" min="0" /></div>
+              </div>
+              <div class="config-field">
+                <label for="omSavingsRate">Spaartarief</label>
+                <div class="input-with-suffix"><input type="number" id="omSavingsRate" value="-0.01" step="0.01" /><span>%</span></div>
+              </div>
+              <div class="config-field">
+                <label for="omInvestRate">Beleggingstarief</label>
+                <div class="input-with-suffix"><input type="number" id="omInvestRate" value="5.53" step="0.01" min="0" /><span>%</span></div>
+              </div>
+              <div class="config-field">
+                <label for="omBracket1">Schijf 1 grens</label>
+                <div class="input-with-prefix"><span>€</span><input type="number" id="omBracket1" value="50651" step="1" min="0" /></div>
+              </div>
+              <div class="config-field">
+                <label for="omBracket2">Schijf 2 grens</label>
+                <div class="input-with-prefix"><span>€</span><input type="number" id="omBracket2" value="962351" step="1" min="0" /></div>
+              </div>
+            </div>
+            <p class="config-note">Schijf 1: 67% sparen / 33% beleggen. Schijf 2: 21% / 79%. Schijf 3: 100% beleggen.</p>
           </div>
         </details>
 

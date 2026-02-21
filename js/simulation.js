@@ -8,6 +8,7 @@
 import {
   calcNoTax,
   calcOldSystem,
+  calcOldMethodSystem,
   calcCurrentSystem,
   calcFutureIncome,
   calcFutureSystem
@@ -28,7 +29,7 @@ export function runSimulation(startCapital, returns, configs, contributionsByYea
   const years = returns.map(r => r.year);
 
   // Initialize tracking arrays
-  const systems = ['noTax', 'old', 'current', 'future'];
+  const systems = ['noTax', 'old', 'oldMethod', 'current', 'future'];
   const portfolioValues = {};
   const annualTax = {};
   const cumulativeTax = {};
@@ -83,6 +84,10 @@ export function runSimulation(startCapital, returns, configs, contributionsByYea
           // The old system taxes deemed return on wealth at 1 January,
           // so we use the portfolio value before this year's market return.
           tax = calcOldSystem(prevValue, returnAmount, configs.old);
+          break;
+        case 'oldMethod':
+          // Old method (2017-2022): uses user-configured brackets and rates.
+          tax = calcOldMethodSystem(prevValue, returnAmount, configs.oldMethod);
           break;
         case 'current':
           // Same peildatum logic: tax is based on wealth at 1 January.

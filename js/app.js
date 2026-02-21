@@ -40,6 +40,7 @@ let configs = getDefaultConfigs();
 const systemMeta = {
   noTax: { label: 'Geen belasting', color: '#00d68f', bg: 'rgba(0, 214, 143, 0.08)' },
   old:   { label: 'Oud systeem (vóór 2017)', color: '#4a90d9', bg: 'rgba(74, 144, 217, 0.08)' },
+  oldMethod: { label: 'Oude methode (2017–2022)', color: '#9b59b6', bg: 'rgba(155, 89, 182, 0.08)' },
   current: { label: 'Huidig systeem (overbruggingswet)', color: '#f5a623', bg: 'rgba(245, 166, 35, 0.08)' },
   future: { label: 'Toekomstig (2028+)', color: '#ff4466', bg: 'rgba(255, 68, 102, 0.08)' }
 };
@@ -61,6 +62,15 @@ function cacheDom() {
   dom.oldDeemedReturn = document.getElementById('oldDeemedReturn');
   dom.oldTaxRate = document.getElementById('oldTaxRate');
   dom.oldExemption = document.getElementById('oldExemption');
+
+  // Old method (2017-2022) config
+  dom.oldMethodYear = document.getElementById('oldMethodYear');
+  dom.omTaxRate = document.getElementById('omTaxRate');
+  dom.omExemption = document.getElementById('omExemption');
+  dom.omSavingsRate = document.getElementById('omSavingsRate');
+  dom.omInvestRate = document.getElementById('omInvestRate');
+  dom.omBracket1 = document.getElementById('omBracket1');
+  dom.omBracket2 = document.getElementById('omBracket2');
 
   // Current system config
   dom.curTaxRate = document.getElementById('curTaxRate');
@@ -218,6 +228,27 @@ function renderCpiTable(baseAmount, startYear, endYear, cpiEnabled) {
     </div>`;
 }
 
+// ── Old method year presets ──
+const oldMethodPresets = {
+  2017: { taxRate: 30, exemption: 25000, savingsRate: 1.63, investRate: 5.39, bracket1Limit: 75000, bracket2Limit: 975000 },
+  2018: { taxRate: 30, exemption: 30000, savingsRate: 0.36, investRate: 5.38, bracket1Limit: 70801, bracket2Limit: 978001 },
+  2019: { taxRate: 30, exemption: 30360, savingsRate: 0.13, investRate: 5.59, bracket1Limit: 71651, bracket2Limit: 989737 },
+  2020: { taxRate: 30, exemption: 30846, savingsRate: 0.07, investRate: 5.28, bracket1Limit: 72798, bracket2Limit: 1005573 },
+  2021: { taxRate: 31, exemption: 50000, savingsRate: 0.03, investRate: 5.69, bracket1Limit: 50001, bracket2Limit: 950001 },
+  2022: { taxRate: 31, exemption: 50650, savingsRate: -0.01, investRate: 5.53, bracket1Limit: 50651, bracket2Limit: 962351 }
+};
+
+function applyOldMethodPreset(yearStr) {
+  const preset = oldMethodPresets[parseInt(yearStr)];
+  if (!preset) return;
+  if (dom.omTaxRate) dom.omTaxRate.value = preset.taxRate;
+  if (dom.omExemption) dom.omExemption.value = preset.exemption;
+  if (dom.omSavingsRate) dom.omSavingsRate.value = preset.savingsRate;
+  if (dom.omInvestRate) dom.omInvestRate.value = preset.investRate;
+  if (dom.omBracket1) dom.omBracket1.value = preset.bracket1Limit;
+  if (dom.omBracket2) dom.omBracket2.value = preset.bracket2Limit;
+}
+
 // ── Get active (toggled-on) systems ──
 function getActiveSystems() {
   const toggles = document.querySelectorAll('.system-toggle');
@@ -292,6 +323,16 @@ function readConfigs() {
     deemedReturn: parseFloat(dom.oldDeemedReturn.value) || 4,
     taxRate: parseFloat(dom.oldTaxRate.value) || 30,
     exemption: parseFloat(dom.oldExemption.value) || 21139,
+    partnerMultiplier
+  };
+
+  configs.oldMethod = {
+    taxRate: parseFloat(dom.omTaxRate.value) || 31,
+    exemption: parseFloat(dom.omExemption.value) || 50650,
+    savingsRate: parseFloat(dom.omSavingsRate.value),
+    investRate: parseFloat(dom.omInvestRate.value) || 5.53,
+    bracket1Limit: parseFloat(dom.omBracket1.value) || 50651,
+    bracket2Limit: parseFloat(dom.omBracket2.value) || 962351,
     partnerMultiplier
   };
 
@@ -628,11 +669,21 @@ function setupEventListeners() {
   // Config inputs — all debounced
   const configInputs = [
     dom.oldDeemedReturn, dom.oldTaxRate, dom.oldExemption,
+    dom.omTaxRate, dom.omExemption, dom.omSavingsRate,
+    dom.omInvestRate, dom.omBracket1, dom.omBracket2,
     dom.curTaxRate, dom.curExemption, dom.curSavingsRate,
     dom.curInvestRate, dom.curDebtRate, dom.curDebtThreshold,
     dom.curAllocSavings, dom.curAllocInvest, dom.curAllocDebt,
     dom.futTaxRate, dom.futFreeReturn, dom.futLossThreshold
-  ];
+  ].filter(Boolean);
+
+  // Old method year preset — populates fields with that year's values
+  if (dom.oldMethodYear) {
+    dom.oldMethodYear.addEventListener('change', () => {
+      applyOldMethodPreset(dom.oldMethodYear.value);
+      update();
+    });
+  }
 
   configInputs.forEach(input => {
     input.addEventListener('input', debouncedUpdate);
