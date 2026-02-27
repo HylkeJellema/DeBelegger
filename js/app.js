@@ -42,7 +42,8 @@ const systemMeta = {
   old:   { label: 'Oud systeem (vóór 2017)', color: '#4a90d9', bg: 'rgba(74, 144, 217, 0.08)' },
   oldMethod: { label: 'Oude methode (2017–2022)', color: '#9b59b6', bg: 'rgba(155, 89, 182, 0.08)' },
   current: { label: 'Huidig systeem (overbruggingswet)', color: '#f5a623', bg: 'rgba(245, 166, 35, 0.08)' },
-  future: { label: 'Toekomstig (2028+)', color: '#ff4466', bg: 'rgba(255, 68, 102, 0.08)' }
+  future: { label: 'Toekomstig (2028+)', color: '#ff4466', bg: 'rgba(255, 68, 102, 0.08)' },
+  actualReturn: { label: 'Werkelijk rendement voorbeeld', color: '#27ae60', bg: 'rgba(39, 174, 96, 0.08)' }
 };
 
 // ── DOM Elements ──
@@ -87,6 +88,12 @@ function cacheDom() {
   dom.futTaxRate = document.getElementById('futTaxRate');
   dom.futFreeReturn = document.getElementById('futFreeReturn');
   dom.futLossThreshold = document.getElementById('futLossThreshold');
+
+  // Actual return system config
+  dom.arExemption = document.getElementById('arExemption');
+  dom.arBracket1Rate = document.getElementById('arBracket1Rate');
+  dom.arBracket1Limit = document.getElementById('arBracket1Limit');
+  dom.arBracket2Rate = document.getElementById('arBracket2Rate');
 
   // Future info modal
   dom.futInfoBtn = document.getElementById('futInfoBtn');
@@ -353,6 +360,14 @@ function readConfigs() {
     taxRate: parseFloat(dom.futTaxRate.value) || 36,
     freeReturn: parseFloat(dom.futFreeReturn.value) || 1800,
     lossThreshold: parseFloat(dom.futLossThreshold.value) || 500,
+    partnerMultiplier
+  };
+
+  configs.actualReturn = {
+    exemption: parseFloat(dom.arExemption.value) || 100000,
+    bracket1Limit: parseFloat(dom.arBracket1Limit.value) || 1000000,
+    bracket1Rate: parseFloat(dom.arBracket1Rate.value) || 25,
+    bracket2Rate: parseFloat(dom.arBracket2Rate.value) || 40,
     partnerMultiplier
   };
 }
@@ -674,7 +689,8 @@ function setupEventListeners() {
     dom.curTaxRate, dom.curExemption, dom.curSavingsRate,
     dom.curInvestRate, dom.curDebtRate, dom.curDebtThreshold,
     dom.curAllocSavings, dom.curAllocInvest, dom.curAllocDebt,
-    dom.futTaxRate, dom.futFreeReturn, dom.futLossThreshold
+    dom.futTaxRate, dom.futFreeReturn, dom.futLossThreshold,
+    dom.arExemption, dom.arBracket1Rate, dom.arBracket1Limit, dom.arBracket2Rate
   ].filter(Boolean);
 
   // Old method year preset — populates fields with that year's values

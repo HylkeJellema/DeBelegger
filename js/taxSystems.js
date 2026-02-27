@@ -283,6 +283,44 @@ export function calcFutureSystem(portfolioValue, taxableIncome, config) {
 }
 
 /**
+ * Actual Return Example System ("Werkelijk Rendement Voorbeeld")
+ * - Tax is only levied at the moment of sale (realized gains)
+ * - Progressive brackets on total realized gain:
+ *   • 0% up to exemption (heffingsvrije winst)
+ *   • bracket1Rate% on gains up to bracket1Limit
+ *   • bracket2Rate% on gains above bracket1Limit
+ *
+ * @param {number} totalGain - Total realized gain (endValue - costBasis)
+ * @param {Object} config
+ */
+export function calcActualReturnSystem(totalGain, config) {
+  const {
+    exemption = 100000,
+    bracket1Limit = 1000000,
+    bracket1Rate = 25,
+    bracket2Rate = 40
+  } = config;
+
+  if (totalGain <= 0) return 0;
+
+  const partnerMultiplier = getPartnerMultiplier(config);
+  const effectiveExemption = exemption * partnerMultiplier;
+
+  const taxableGain = Math.max(0, totalGain - effectiveExemption);
+  if (taxableGain <= 0) return 0;
+
+  let tax = 0;
+  if (taxableGain > bracket1Limit) {
+    tax += bracket1Limit * (bracket1Rate / 100);
+    tax += (taxableGain - bracket1Limit) * (bracket2Rate / 100);
+  } else {
+    tax += taxableGain * (bracket1Rate / 100);
+  }
+
+  return Math.max(0, tax);
+}
+
+/**
  * Get default config for each system
  */
 export function getDefaultConfigs() {
@@ -319,6 +357,13 @@ export function getDefaultConfigs() {
       taxRate: 36,
       freeReturn: 1800,
       lossThreshold: 500,
+      partnerMultiplier: 1
+    },
+    actualReturn: {
+      exemption: 100000,
+      bracket1Limit: 1000000,
+      bracket1Rate: 25,
+      bracket2Rate: 40,
       partnerMultiplier: 1
     }
   };

@@ -1,7 +1,7 @@
 /**
  * Simulation Engine
  *
- * Runs a year-by-year simulation of portfolio growth under 4 tax regimes,
+ * Runs a year-by-year simulation of portfolio growth under multiple tax regimes,
  * using historical market return data.
  */
 
@@ -11,7 +11,8 @@ import {
   calcOldMethodSystem,
   calcCurrentSystem,
   calcFutureIncome,
-  calcFutureSystem
+  calcFutureSystem,
+  calcActualReturnSystem
 } from './taxSystems.js';
 
 /**
@@ -19,7 +20,7 @@ import {
  *
  * @param {number} startCapital - Initial investment amount in EUR
  * @param {Array<{year: number, return: number}>} returns - Array of yearly returns
- * @param {Object} configs - Tax system configs { noTax, old, current, future }
+ * @param {Object} configs - Tax system configs { noTax, old, current, future, actualReturn }
  * @param {Object|number} contributionsByYear - Map of { year: monthlyAmount } or a flat number for backwards compat
  * @returns {Object} Simulation results with arrays for each chart
  */
@@ -29,13 +30,16 @@ export function runSimulation(startCapital, returns, configs, contributionsByYea
   const years = returns.map(r => r.year);
 
   // Initialize tracking arrays
-  const systems = ['noTax', 'old', 'oldMethod', 'current', 'future'];
+  const systems = ['noTax', 'old', 'oldMethod', 'current', 'future', 'actualReturn'];
   const portfolioValues = {};
   const annualTax = {};
   const cumulativeTax = {};
 
   // Loss carry forward for future system
   let futureCarryForwardLoss = 0;
+
+  // Cost basis tracking for actualReturn (startCapital + all deposits)
+  let actualReturnCostBasis = startCapital;
 
   for (const sys of systems) {
     portfolioValues[sys] = [startCapital]; // starting value at year 0
@@ -52,6 +56,9 @@ export function runSimulation(startCapital, returns, configs, contributionsByYea
     const annualFactor = 1 + annualRate;
     const monthlyFactor = annualFactor <= 0 ? 0 : Math.pow(annualFactor, 1 / 12);
     const contributionsThisYear = deposit * 12;
+
+    // Track cost basis for actualReturn
+    actualReturnCostBasis += contributionsThisYear;
 
     for (const sys of systems) {
       const prevValue = portfolioValues[sys][i]; // peildatum / start-of-year wealth
@@ -80,24 +87,15 @@ export function runSimulation(startCapital, returns, configs, contributionsByYea
           tax = calcNoTax();
           break;
         case 'old':
-          // Use prevValue (peildatum / start-of-year wealth) as tax base.
-          // The old system taxes deemed return on wealth at 1 January,
-          // so we use the portfolio value before this year's market return.
           tax = calcOldSystem(prevValue, returnAmount, configs.old);
           break;
         case 'oldMethod':
-          // Old method (2017-2022): uses user-configured brackets and rates.
           tax = calcOldMethodSystem(prevValue, returnAmount, configs.oldMethod);
           break;
         case 'current':
-          // Same peildatum logic: tax is based on wealth at 1 January.
           tax = calcCurrentSystem(prevValue, returnAmount, configs.current);
           break;
         case 'future': {
-          // Proposal order:
-          // 1) apply heffingsvrij resultaat to positive annual return
-          // 2) offset positive income with carry-forward losses
-          // 3) register a new loss only if annual loss exceeds threshold
           const incomeBeforeLossSetoff = calcFutureIncome(returnAmount, configs.future);
           const partnerMultiplier = Number(configs.future.partnerMultiplier) > 1 ? 2 : 1;
           const lossThreshold = (Number(configs.future.lossThreshold) || 500) * partnerMultiplier;
@@ -119,6 +117,10 @@ export function runSimulation(startCapital, returns, configs, contributionsByYea
           }
           break;
         }
+        case 'actualReturn':
+          // No annual tax — tax is only levied at sale (handled after the loop)
+          tax = 0;
+          break;
       }
 
       // Don't let tax exceed the portfolio value
@@ -134,6 +136,22 @@ export function runSimulation(startCapital, returns, configs, contributionsByYea
         : 0;
       cumulativeTax[sys].push(prevCumTax + tax);
     }
+  }
+
+  // ── Actual Return: apply tax at sale (end of simulation) ──
+  if (returns.length > 0) {
+    const lastIdx = portfolioValues.actualReturn.length - 1;
+    const endValue = portfolioValues.actualReturn[lastIdx];
+    const totalGain = endValue - actualReturnCostBasis;
+    const saleTax = Math.min(
+      calcActualReturnSystem(totalGain, configs.actualReturn),
+      Math.max(0, endValue)
+    );
+
+    // Adjust the final data points
+    portfolioValues.actualReturn[lastIdx] = endValue - saleTax;
+    annualTax.actualReturn[annualTax.actualReturn.length - 1] = saleTax;
+    cumulativeTax.actualReturn[cumulativeTax.actualReturn.length - 1] = saleTax;
   }
 
   // Labels: start year - 1 (initial), then each year
