@@ -43,7 +43,7 @@ const systemMeta = {
   oldMethod: { label: 'Oude methode (2017–2022)', color: '#9b59b6', bg: 'rgba(155, 89, 182, 0.08)' },
   current: { label: 'Huidig systeem (overbruggingswet)', color: '#f5a623', bg: 'rgba(245, 166, 35, 0.08)' },
   future: { label: 'Toekomstig (2028+)', color: '#ff4466', bg: 'rgba(255, 68, 102, 0.08)' },
-  actualReturn: { label: 'Werkelijk rendement voorbeeld', color: '#27ae60', bg: 'rgba(39, 174, 96, 0.08)' }
+  actualReturn: { label: 'De Nederlandse Droom', color: '#27ae60', bg: 'rgba(39, 174, 96, 0.08)' }
 };
 
 // ── DOM Elements ──
